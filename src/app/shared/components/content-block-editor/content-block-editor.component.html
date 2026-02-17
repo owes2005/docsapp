@@ -1,0 +1,7 @@
+<div class="content-block-editor">
+  <!-- Simplified Content Block Editor (Quill removed to avoid dependency issues) -->
+  <textarea class="editor" 
+            [value]="content" 
+            (input)="onContentChange($event)"
+            placeholder="Edit text content..."></textarea>
+</div>

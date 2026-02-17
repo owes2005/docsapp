@@ -1,0 +1,133 @@
+{
+  "workspaces": [
+    {
+      "id": "ws1",
+      "name": "My Workspace",
+      "createdAt": "2024-02-01T00:00:00Z",
+      "userId": "user1"
+    }
+  ],
+  "documents": [
+    {
+      "id": "doc1",
+      "workspaceId": "ws1",
+      "title": "Getting Started",
+      "icon": "📄",
+      "createdAt": "2024-02-01T00:00:00Z",
+      "updatedAt": "2024-02-16T10:30:00Z"
+    },
+    {
+      "id": "doc2",
+      "workspaceId": "ws1",
+      "title": "My Notes",
+      "icon": "📝",
+      "createdAt": "2024-02-10T00:00:00Z",
+      "updatedAt": "2024-02-15T14:20:00Z"
+    },
+    {
+      "id": "doc1771306103240",
+      "workspaceId": "ws1",
+      "title": "Untitled",
+      "icon": "📄",
+      "createdAt": "2026-02-17T05:28:23.240Z",
+      "updatedAt": "2026-02-17T05:28:23.240Z"
+    }
+  ],
+  "pages": [
+    {
+      "id": "page1",
+      "documentId": "doc1",
+      "title": "Welcome",
+      "icon": "👋",
+      "order": 1,
+      "parentId": null,
+      "content": {
+        "blocks": [
+          {
+            "id": "block1",
+            "type": "heading",
+            "level": 1,
+            "content": "Welcome to DocFlow",
+            "order": 0
+          },
+          {
+            "id": "block2",
+            "type": "text",
+            "content": "This is a canvas-based document editor. Start typing or use the Insert button to add content.",
+            "order": 1
+          },
+          {
+            "id": "block3",
+            "type": "heading",
+            "level": 2,
+            "content": "Getting Started",
+            "order": 2
+          },
+          {
+            "id": "block4",
+            "type": "text",
+            "content": "Click on any text to edit it. Use the Insert menu or type / to add new blocks.",
+            "order": 3
+          },
+          {
+            "id": "block1771305423876",
+            "type": "heading",
+            "content": "",
+            "order": 4,
+            "level": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "page2",
+      "documentId": "doc1",
+      "title": "Features",
+      "icon": "✨",
+      "order": 2,
+      "parentId": null,
+      "content": {
+        "blocks": [
+          {
+            "id": "block5",
+            "type": "heading",
+            "level": 1,
+            "content": "Features",
+            "order": 0
+          },
+          {
+            "id": "block6",
+            "type": "text",
+            "content": "Explore what you can do with DocFlow",
+            "order": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "page3",
+      "documentId": "doc2",
+      "title": "Notes",
+      "icon": "📋",
+      "order": 1,
+      "parentId": null,
+      "content": {
+        "blocks": [
+          {
+            "id": "block7",
+            "type": "heading",
+            "level": 1,
+            "content": "My Notes",
+            "order": 0
+          },
+          {
+            "id": "block8",
+            "type": "text",
+            "content": "Start taking notes here...",
+            "order": 1
+          }
+        ]
+      }
+    }
+  ]
+}

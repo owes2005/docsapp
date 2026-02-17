@@ -1,0 +1,129 @@
+<div class="text-toolbar" 
+     *ngIf="visible"
+     [style.top.px]="position.top"
+     [style.left.px]="position.left">
+  
+  <div class="toolbar-content">
+    
+    <button mat-icon-button 
+            (mousedown)="$event.preventDefault()"
+            (click)="execCommand('bold')" 
+            matTooltip="Bold (⌘B)">
+      <mat-icon>format_bold</mat-icon>
+    </button>
+    
+    <button mat-icon-button 
+            (mousedown)="$event.preventDefault()"
+            (click)="execCommand('italic')" 
+            matTooltip="Italic (⌘I)">
+      <mat-icon>format_italic</mat-icon>
+    </button>
+    
+    <button mat-icon-button 
+            (mousedown)="$event.preventDefault()"
+            (click)="execCommand('underline')" 
+            matTooltip="Underline (⌘U)">
+      <mat-icon>format_underlined</mat-icon>
+    </button>
+    
+    <button mat-icon-button 
+            (mousedown)="$event.preventDefault()"
+            (click)="execCommand('strikeThrough')" 
+            matTooltip="Strikethrough">
+      <mat-icon>format_strikethrough</mat-icon>
+    </button>
+    
+    <mat-divider [vertical]="true"></mat-divider>
+    
+    <button mat-icon-button 
+            [matMenuTriggerFor]="colorMenu"
+            (mousedown)="$event.preventDefault()"
+            matTooltip="Text color">
+      <mat-icon>format_color_text</mat-icon>
+    </button>
+    
+    <mat-menu #colorMenu="matMenu">
+      <button mat-menu-item (click)="changeColor('#000000')">
+        <span class="color-preview" style="background: #000000"></span>
+        Default
+      </button>
+      <button mat-menu-item (click)="changeColor('#e03e2d')">
+        <span class="color-preview" style="background: #e03e2d"></span>
+        Red
+      </button>
+      <button mat-menu-item (click)="changeColor('#0b6e99')">
+        <span class="color-preview" style="background: #0b6e99"></span>
+        Blue
+      </button>
+      <button mat-menu-item (click)="changeColor('#448361')">
+        <span class="color-preview" style="background: #448361"></span>
+        Green
+      </button>
+      <button mat-menu-item (click)="changeColor('#9065b0')">
+        <span class="color-preview" style="background: #9065b0"></span>
+        Purple
+      </button>
+      <button mat-menu-item (click)="changeColor('#cb912f')">
+        <span class="color-preview" style="background: #cb912f"></span>
+        Orange
+      </button>
+    </mat-menu>
+    
+    <button mat-icon-button 
+            [matMenuTriggerFor]="bgMenu"
+            (mousedown)="$event.preventDefault()"
+            matTooltip="Highlight">
+      <mat-icon>format_color_fill</mat-icon>
+    </button>
+    
+    <mat-menu #bgMenu="matMenu">
+      <button mat-menu-item (click)="changeBackground('transparent')">
+        <span class="color-preview" style="background: white; border: 1px solid #ddd"></span>
+        None
+      </button>
+      <button mat-menu-item (click)="changeBackground('#fef3cd')">
+        <span class="color-preview" style="background: #fef3cd"></span>
+        Yellow
+      </button>
+      <button mat-menu-item (click)="changeBackground('#ffe2dd')">
+        <span class="color-preview" style="background: #ffe2dd"></span>
+        Pink
+      </button>
+      <button mat-menu-item (click)="changeBackground('#d3e5ef')">
+        <span class="color-preview" style="background: #d3e5ef"></span>
+        Blue
+      </button>
+      <button mat-menu-item (click)="changeBackground('#d4eee2')">
+        <span class="color-preview" style="background: #d4eee2"></span>
+        Green
+      </button>
+    </mat-menu>
+    
+    <mat-divider [vertical]="true"></mat-divider>
+    
+    <button mat-icon-button 
+            (mousedown)="$event.preventDefault()"
+            (click)="createLink()" 
+            matTooltip="Link (⌘K)">
+      <mat-icon>link</mat-icon>
+    </button>
+    
+    <button mat-icon-button 
+            (mousedown)="$event.preventDefault()"
+            (click)="execCommand('unlink')" 
+            matTooltip="Remove link">
+      <mat-icon>link_off</mat-icon>
+    </button>
+    
+    <mat-divider [vertical]="true"></mat-divider>
+    
+    <button mat-icon-button 
+            (mousedown)="$event.preventDefault()"
+            (click)="execCommand('formatBlock', 'pre')" 
+            matTooltip="Inline code">
+      <mat-icon>code</mat-icon>
+    </button>
+    
+  </div>
+  
+</div>

@@ -1,0 +1,297 @@
+<div class="canvas-editor" (keydown)="handleKeyboardShortcut($event)">
+  
+  <!-- Page Title (Editable) -->
+  <div class="page-title-section">
+    <h1 class="page-title"
+        contenteditable="true"
+        (blur)="updatePageTitle($event)"
+        [textContent]="pageTitle"
+        placeholder="Add page title">
+    </h1>
+  </div>
+
+  <!-- Insert Menu Button -->
+  <div class="insert-menu">
+    <button mat-button class="insert-btn" [matMenuTriggerFor]="insertMenu">
+      <mat-icon>add</mat-icon>
+      <span>Insert</span>
+      <span class="slash-hint">/</span>
+    </button>
+  </div>
+
+  <mat-menu #insertMenu="matMenu" class="insert-dropdown">
+    <button mat-menu-item *ngFor="let blockType of blockTypes" (click)="addBlock($any(blockType.type))">
+      <mat-icon>{{blockType.icon}}</mat-icon>
+      <span>{{blockType.label}}</span>
+    </button>
+  </mat-menu>
+
+  <!-- Content Blocks (Draggable) -->
+  <div class="blocks-container" 
+       cdkDropList 
+       (cdkDropListDropped)="dropBlock($event)">
+    
+    <div *ngFor="let block of blocks; let i = index" 
+         cdkDrag
+         class="content-block"
+         [class.editing]="editingBlockId === block.id">
+      
+      <!-- Drag Handle -->
+      <div class="block-controls">
+        <button mat-icon-button cdkDragHandle class="drag-handle">
+          <mat-icon>drag_indicator</mat-icon>
+        </button>
+      </div>
+
+      <!-- Block Content -->
+      <div class="block-content">
+        
+        <!-- Heading Block -->
+        <div *ngIf="block.type === 'heading'" class="heading-block">
+          <h1 *ngIf="block.level === 1" 
+              contenteditable="true"
+              [attr.data-block-id]="block.id"
+              (blur)="updateBlock(block.id, $event)"
+              (keydown)="onKeyDown($event, block.id)"
+              [textContent]="block.content"
+              placeholder="Heading 1">
+          </h1>
+          <h2 *ngIf="block.level === 2"
+              contenteditable="true"
+              [attr.data-block-id]="block.id"
+              (blur)="updateBlock(block.id, $event)"
+              (keydown)="onKeyDown($event, block.id)"
+              [textContent]="block.content"
+              placeholder="Heading 2">
+          </h2>
+          <h3 *ngIf="block.level === 3"
+              contenteditable="true"
+              [attr.data-block-id]="block.id"
+              (blur)="updateBlock(block.id, $event)"
+              (keydown)="onKeyDown($event, block.id)"
+              [textContent]="block.content"
+              placeholder="Heading 3">
+          </h3>
+        </div>
+
+        <!-- Text Block -->
+        <div *ngIf="block.type === 'text'" class="text-block">
+          <p contenteditable="true"
+             [attr.data-block-id]="block.id"
+             (blur)="updateBlock(block.id, $event)"
+             (keydown)="onKeyDown($event, block.id)"
+             [textContent]="block.content"
+             placeholder="Start typing or insert using  /">
+          </p>
+        </div>
+
+        <!-- Image Block -->
+        <div *ngIf="block.type === 'image'" class="image-block">
+          
+          <div *ngIf="!block.imageUrl" class="image-upload-options">
+            
+            <div class="upload-header">
+              <mat-icon>add_photo_alternate</mat-icon>
+              <h4>Add an image</h4>
+            </div>
+            
+            <div class="upload-buttons">
+              <input type="file" 
+                     accept="image/*" 
+                     (change)="uploadImage($event, block.id)"
+                     #fileInput
+                     style="display: none;">
+              
+              <button mat-raised-button 
+                      color="primary" 
+                      class="upload-btn"
+                      (click)="fileInput.click()">
+                <mat-icon>upload_file</mat-icon>
+                <div class="btn-content">
+                  <span class="btn-title">Upload from computer</span>
+                  <span class="btn-subtitle">JPG, PNG, GIF, SVG (max 5MB)</span>
+                </div>
+              </button>
+              
+              <button mat-stroked-button 
+                      class="upload-btn"
+                      (click)="uploadImageFromUrl(block.id)">
+                <mat-icon>link</mat-icon>
+                <div class="btn-content">
+                  <span class="btn-title">Add from URL</span>
+                  <span class="btn-subtitle">Paste a link to an image</span>
+                </div>
+              </button>
+              
+              <button mat-stroked-button 
+                      class="upload-btn"
+                      disabled
+                      matTooltip="Gallery feature coming soon">
+                <mat-icon>collections</mat-icon>
+                <div class="btn-content">
+                  <span class="btn-title">Choose from gallery</span>
+                  <span class="btn-subtitle">Select from uploaded images</span>
+                </div>
+              </button>
+            </div>
+            
+          </div>
+          
+          <div *ngIf="block.imageUrl" class="image-display">
+            
+            <div class="image-container">
+              <img [src]="block.imageUrl" 
+                   alt="Uploaded image"
+                   (click)="openImageViewer(block.imageUrl, block.imageCaption)"
+                   (error)="block.imageUrl = ''; savePage()"
+                   class="clickable-image">
+              
+              <div class="image-actions">
+                <button mat-mini-fab 
+                        color="primary"
+                        (click)="changeImage(block.id); $event.stopPropagation()"
+                        matTooltip="Change image">
+                  <mat-icon>edit</mat-icon>
+                </button>
+                <button mat-mini-fab
+                        (click)="deleteBlock(block.id); $event.stopPropagation()"
+                        matTooltip="Delete image">
+                  <mat-icon>delete</mat-icon>
+                </button>
+              </div>
+              
+              <div class="enlarge-hint">
+                <mat-icon>zoom_in</mat-icon>
+                <span>Click to enlarge</span>
+              </div>
+            </div>
+            
+            <input type="text"
+                   class="image-caption"
+                   [(ngModel)]="block.imageCaption"
+                   (blur)="savePage()"
+                   placeholder="Add a caption (optional)...">
+          </div>
+          
+        </div>
+
+        <!-- Gallery Block -->
+        <div *ngIf="block.type === 'gallery'" class="gallery-block">
+          
+          <div class="gallery-grid" *ngIf="block.content && block.content.length > 0">
+            <div *ngFor="let image of block.content; let i = index" class="gallery-item">
+              <img [src]="image.url" alt="Gallery image" (click)="openImageViewer(image.url, image.caption)">
+              <button mat-icon-button 
+                      class="remove-image"
+                      (click)="block.content.splice(i, 1); savePage()">
+                <mat-icon>close</mat-icon>
+              </button>
+            </div>
+          </div>
+          
+          <div class="add-gallery-image">
+            <input type="file"
+                   accept="image/*"
+                   (change)="addImageToGallery(block.id, $event)"
+                   #galleryInput
+                   style="display: none;">
+            <button mat-stroked-button (click)="galleryInput.click()">
+              <mat-icon>add_photo_alternate</mat-icon>
+              Add image to gallery
+            </button>
+          </div>
+          
+        </div>
+
+        <!-- Divider Block -->
+        <div *ngIf="block.type === 'divider'" class="divider-block">
+          <mat-divider></mat-divider>
+        </div>
+
+        <!-- Code Block -->
+        <div *ngIf="block.type === 'code'" class="code-block">
+          <pre contenteditable="true"
+               (blur)="updateBlock(block.id, $event)"
+               [textContent]="block.content"
+               placeholder="// Code here"></pre>
+        </div>
+
+        <!-- Quote Block -->
+        <div *ngIf="block.type === 'quote'" class="quote-block">
+          <blockquote contenteditable="true"
+                      (blur)="updateBlock(block.id, $event)"
+                      [textContent]="block.content"
+                      placeholder="Quote...">
+          </blockquote>
+        </div>
+
+      </div>
+
+      <!-- Block Actions (on hover) -->
+      <div class="block-actions">
+        <button mat-icon-button [matMenuTriggerFor]="blockMenu" class="block-menu-btn">
+          <mat-icon>more_vert</mat-icon>
+        </button>
+        
+        <mat-menu #blockMenu="matMenu">
+          <button mat-menu-item (click)="duplicateBlock(block.id)">
+            <mat-icon>content_copy</mat-icon>
+            <span>Duplicate</span>
+          </button>
+          <button mat-menu-item (click)="deleteBlock(block.id)">
+            <mat-icon>delete</mat-icon>
+            <span>Delete</span>
+          </button>
+        </mat-menu>
+      </div>
+
+    </div>
+
+  </div>
+
+  <!-- Slash Command Menu -->
+  <div *ngIf="showSlashMenu" 
+       class="slash-menu"
+       [style.top.px]="slashMenuPosition.top"
+       [style.left.px]="slashMenuPosition.left">
+    
+    <div class="slash-menu-header">
+      <mat-icon>search</mat-icon>
+      <span *ngIf="!slashMenuFilter">Type to filter blocks...</span>
+      <span *ngIf="slashMenuFilter" class="filter-text">{{slashMenuFilter}}</span>
+    </div>
+    
+    <div class="slash-menu-items">
+      <div *ngFor="let blockType of getFilteredBlockTypes(); let i = index"
+           class="slash-menu-item"
+           [class.selected]="i === slashMenuSelectedIndex"
+           (mouseenter)="slashMenuSelectedIndex = i"
+           (click)="insertBlockType(blockType.type, blockType.level)">
+        
+        <div class="item-icon">
+          <mat-icon>{{blockType.icon}}</mat-icon>
+        </div>
+        
+        <div class="item-content">
+          <div class="item-label">{{blockType.label}}</div>
+          <div class="item-description">{{blockType.description}}</div>
+        </div>
+        
+        <div class="item-category">{{blockType.category}}</div>
+      </div>
+    </div>
+    
+    <div class="slash-menu-footer">
+      <span class="hint">
+        <kbd>↑</kbd> <kbd>↓</kbd> Navigate
+        <kbd>Enter</kbd> Select
+        <kbd>Esc</kbd> Cancel
+      </span>
+    </div>
+    
+  </div>
+
+  <!-- Text Selection Toolbar -->
+  <app-text-toolbar></app-text-toolbar>
+
+</div>

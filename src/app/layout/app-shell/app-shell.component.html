@@ -1,0 +1,64 @@
+<div class="app-shell">
+  
+  <!-- Top Toolbar (only in document editor) -->
+  <mat-toolbar class="doc-toolbar" *ngIf="isDocumentEditor()">
+    
+    <div class="toolbar-left">
+      <button mat-icon-button routerLink="/documents" matTooltip="Back to docs">
+        <mat-icon>arrow_back</mat-icon>
+      </button>
+      
+      <div class="doc-breadcrumb">
+        <span class="workspace-name">My Workspace</span>
+        <mat-icon>chevron_right</mat-icon>
+        <span class="doc-name">{{currentDocTitle}}</span>
+      </div>
+    </div>
+
+    <div class="toolbar-right">
+      <button mat-raised-button color="primary" class="share-btn">
+        <mat-icon>share</mat-icon>
+        Share
+      </button>
+      
+     
+      <button mat-icon-button [matMenuTriggerFor]="moreMenu">
+        <mat-icon>more_vert</mat-icon>
+      </button>
+      
+      <mat-menu #moreMenu="matMenu">
+        <button mat-menu-item>
+          <mat-icon>file_copy</mat-icon>
+          <span>Duplicate</span>
+        </button>
+        <button mat-menu-item>
+          <mat-icon>download</mat-icon>
+          <span>Export</span>
+        </button>
+        <mat-divider></mat-divider>
+        <button mat-menu-item>
+          <mat-icon>delete</mat-icon>
+          <span>Delete</span>
+        </button>
+      </mat-menu>
+    </div>
+    
+  </mat-toolbar>
+
+  <!-- Main Layout -->
+  <div class="main-layout" [class.no-toolbar]="!isDocumentEditor()">
+    
+    <!-- Main Navigation Sidebar -->
+    <app-main-sidebar 
+      *ngIf="showMainSidebar" 
+      class="main-sidebar">
+    </app-main-sidebar>
+
+    <!-- Content Area -->
+    <div class="content-area">
+      <router-outlet></router-outlet>
+    </div>
+
+  </div>
+
+</div>

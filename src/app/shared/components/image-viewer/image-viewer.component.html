@@ -1,0 +1,22 @@
+<div class="image-viewer-container">
+  
+  <div class="viewer-header">
+    <div class="header-actions">
+      <button mat-icon-button (click)="downloadImage()" matTooltip="Download">
+        <mat-icon>download</mat-icon>
+      </button>
+      <button mat-icon-button (click)="close()" matTooltip="Close (Esc)">
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
+  </div>
+
+  <div class="viewer-content" (click)="close()">
+    <img [src]="data.imageUrl" alt="Full size image">
+  </div>
+
+  <div class="viewer-footer" *ngIf="data.caption">
+    <p>{{data.caption}}</p>
+  </div>
+
+</div>

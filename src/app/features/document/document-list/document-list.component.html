@@ -1,0 +1,107 @@
+<div class="document-list-page">
+  
+  <div class="search-header">
+    <mat-form-field class="search-field" appearance="outline">
+      <mat-icon matPrefix>search</mat-icon>
+      <input matInput placeholder="Search all docs" [(ngModel)]="searchQuery">
+    </mat-form-field>
+  </div>
+
+  <div class="page-header">
+    <div class="header-content">
+      <div class="breadcrumb">My Workspace</div>
+      <h1 class="page-title">All docs</h1>
+    </div>
+    <div class="header-actions">
+      <button mat-raised-button color="primary" class="create-btn" (click)="createDocument()">
+        <mat-icon>add</mat-icon>
+        Create doc
+      </button>
+    </div>
+  </div>
+
+  <div class="filter-tabs">
+    <button mat-button class="filter-tab active">
+      <mat-icon>schedule</mat-icon>
+      Recent
+    </button>
+    <button mat-button class="filter-tab">
+      Favorites
+    </button>
+    <button mat-button class="filter-tab">
+      Owned by me
+    </button>
+    <button mat-button class="filter-tab">
+      Shared
+    </button>
+    
+    <div class="tab-spacer"></div>
+    
+    <button mat-button class="sort-btn">
+      Sort by updated
+      <mat-icon>arrow_drop_down</mat-icon>
+    </button>
+  </div>
+
+  <div class="documents-container">
+    
+    <div class="doc-row" 
+         *ngFor="let doc of documents$ | async" 
+         (click)="openDocument(doc)">
+      
+      <div class="doc-icon-wrapper">
+        <div class="doc-icon">{{doc.icon}}</div>
+      </div>
+      
+      <div class="doc-details">
+        <div class="doc-title">{{doc.title}}</div>
+        <div class="doc-metadata">
+          <span class="folder-badge">My docs</span>
+          <span class="separator">•</span>
+          <span class="timestamp">Updated {{doc.updatedAt | date:'MMM d, y'}}</span>
+        </div>
+      </div>
+
+      <div class="doc-actions">
+        <button mat-icon-button (click)="$event.stopPropagation()" [matMenuTriggerFor]="docMenu">
+          <mat-icon>more_vert</mat-icon>
+        </button>
+        
+        <mat-menu #docMenu="matMenu">
+          <button mat-menu-item (click)="openDocument(doc)">
+            <mat-icon>open_in_new</mat-icon>
+            <span>Open</span>
+          </button>
+          <button mat-menu-item>
+            <mat-icon>content_copy</mat-icon>
+            <span>Duplicate</span>
+          </button>
+          <button mat-menu-item>
+            <mat-icon>star_outline</mat-icon>
+            <span>Add to favorites</span>
+          </button>
+          <mat-divider></mat-divider>
+          <button mat-menu-item (click)="deleteDocument($event, doc.id)">
+            <mat-icon>delete</mat-icon>
+            <span>Delete</span>
+          </button>
+        </mat-menu>
+      </div>
+      
+    </div>
+
+    <div class="empty-state" *ngIf="(documents$ | async)?.length === 0">
+      <div class="empty-icon">
+        <mat-icon>description</mat-icon>
+      </div>
+      <h3>No documents yet</h3>
+      <p>Create your first doc to get started</p>
+      <button mat-raised-button color="primary" (click)="createDocument()">
+        <mat-icon>add</mat-icon>
+        Create doc
+      </button>
+    </div>
+
+  </div>
+
+</div>

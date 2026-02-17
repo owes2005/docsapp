@@ -1,0 +1,84 @@
+.content-block-editor {
+  position: relative;
+  margin: 4px 0;
+  /* Align with block editor spacing */
+}
+
+/* Edit Mode */
+.edit-mode {
+  border: 2px solid var(--primary);
+  /* Fixed variable name */
+  border-radius: var(--radius-sm);
+  padding: 12px;
+  background: white;
+  box-shadow: var(--shadow-sm);
+}
+
+.editor {
+  min-height: 100px;
+  margin-bottom: 12px;
+  outline: none;
+}
+
+.edit-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+/* View Mode */
+.view-mode {
+  padding: 4px 8px;
+  /* Tighter padding for "Notion" feel */
+  border-radius: var(--radius-sm);
+  cursor: text;
+  transition: background-color 0.1s;
+  position: relative;
+  border: 1px solid transparent;
+}
+
+.view-mode:hover {
+  background: var(--bg-hover);
+  /* Fixed variable name */
+}
+
+.view-mode:hover .block-actions {
+  opacity: 1;
+}
+
+.editable-heading,
+.editable-text {
+  margin: 0;
+  color: var(--text-primary);
+  line-height: 1.5;
+}
+
+.editable-heading {
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.block-actions {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  opacity: 0;
+  transition: opacity 0.2s;
+  background: white;
+  border-radius: 4px;
+  box-shadow: var(--shadow-sm);
+  padding: 0;
+  display: flex;
+}
+
+.block-actions button {
+  width: 24px;
+  height: 24px;
+  line-height: 24px;
+  color: var(--text-secondary);
+}
+
+.block-actions button:hover {
+  color: var(--text-primary);
+  background-color: var(--bg-hover);
+}
