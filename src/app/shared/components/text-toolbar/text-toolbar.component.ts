@@ -40,12 +40,7 @@ export class TextToolbarComponent implements OnInit, OnDestroy {
     this.restoreSelection();
   }
 
-  createLink(): void {
-    const url = prompt('Enter URL:');
-    if (url) {
-      this.execCommand('createLink', url);
-    }
-  }
+  
 
   changeColor(color: string): void {
     this.execCommand('foreColor', color);

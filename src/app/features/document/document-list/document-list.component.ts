@@ -126,12 +126,12 @@ export class DocumentListComponent implements OnInit {
     this.documentService.toggleFavorite(doc).subscribe();
   }
 
-  deleteDocument(event: Event, id: string | number): void {
-    event.stopPropagation();
-    if (confirm('Delete this document?')) {
-      this.documentService.deleteDocument(id).subscribe();
-    }
+deleteDocument(event: Event, id: string): void {
+  event.stopPropagation();
+  if (confirm('Delete this document?')) {
+    this.documentService.deleteDocument(String(id)).subscribe();
   }
+}
 
   // ===== RENAME =====
 
@@ -181,12 +181,15 @@ export class DocumentListComponent implements OnInit {
   }
 
   createFolder(): void {
-    if (this.newFolderName.trim()) {
-      this.documentService.createFolder(this.newFolderName.trim()).subscribe();
-    }
-    this.showNewFolderInput = false;
-    this.newFolderName = '';
+  if (this.newFolderName.trim()) {
+    this.documentService.createFolder(
+      this.newFolderName.trim(),
+      'general'
+    ).subscribe();
   }
+  this.showNewFolderInput = false;
+  this.newFolderName = '';
+}
 
   cancelCreateFolder(): void {
     this.showNewFolderInput = false;
@@ -201,12 +204,12 @@ export class DocumentListComponent implements OnInit {
     }
   }
 
-  deleteFolder(event: Event, id: string | number): void {
-    event.stopPropagation();
-    if (confirm('Delete this folder?')) {
-      this.documentService.deleteFolder(id).subscribe();
-    }
+  deleteFolder(event: Event, id: string): void {
+  event.stopPropagation();
+  if (confirm('Delete this folder?')) {
+    this.documentService.deleteFolder(String(id)).subscribe();
   }
+}
 
   getFolderName(folderId: string | number | null | undefined, folders: Folder[]): string {
     if (!folderId) return 'My docs';

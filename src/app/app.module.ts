@@ -38,6 +38,7 @@ import { BlockEditorComponent } from './features/canvas/block-editor/block-edito
 // Shared Components
 import { TextToolbarComponent } from './shared/components/text-toolbar/text-toolbar.component';
 import { ImageViewerComponent } from './shared/components/image-viewer/image-viewer.component';
+import { DashboardComponent } from './features/dashboard/dashboard.component';
 
 @NgModule({
   declarations: [
@@ -48,7 +49,8 @@ import { ImageViewerComponent } from './shared/components/image-viewer/image-vie
     DocumentEditorComponent,
     BlockEditorComponent,
     TextToolbarComponent,
-    ImageViewerComponent
+    ImageViewerComponent,
+    DashboardComponent
   ],
   imports: [
     BrowserModule,

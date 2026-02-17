@@ -1,0 +1,336 @@
+.dashboard {
+  width: 100%;
+  height: 100%;
+  overflow-y: auto;
+  background: white;
+  padding: 0;
+}
+
+/* ===== HEADER ===== */
+.dashboard-header {
+  padding: 16px 16px 8px 16px;
+  border-bottom: 1px solid #f0f0f0;
+  flex-shrink: 0;
+}
+
+.dashboard-title {
+  font-size: 11px;
+  font-weight: 700;
+  color: #9ca3af;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  margin: 0;
+}
+
+/* ===== PROJECTS ===== */
+.projects-list {
+  padding: 8px 0;
+}
+
+.project-item {
+  margin-bottom: 2px;
+}
+
+/* Project Row */
+.project-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 7px 10px;
+  cursor: pointer;
+  border-radius: 8px;
+  margin: 0 6px;
+  transition: background 0.15s ease;
+  min-height: 36px;
+}
+
+.project-row:hover {
+  background: #f3f4f6;
+}
+
+.project-row:hover .project-right {
+  opacity: 1;
+}
+
+.project-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  flex: 1;
+}
+
+.project-right {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+  flex-shrink: 0;
+}
+
+/* Chevron */
+.chevron {
+  font-size: 16px;
+  width: 16px;
+  height: 16px;
+  color: #9ca3af;
+  flex-shrink: 0;
+  transition: transform 0.2s ease;
+}
+
+.chevron.expanded {
+  transform: rotate(90deg);
+}
+
+/* Project Icon */
+.project-icon {
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+/* Project Name */
+.project-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: #111827;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Add Button */
+.add-btn {
+  width: 24px;
+  height: 24px;
+  background: none;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #6b7280;
+  transition: all 0.15s ease;
+  padding: 0;
+}
+
+.add-btn:hover {
+  background: #e5e7eb;
+  color: #111827;
+}
+
+.add-btn.danger:hover {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.add-btn mat-icon {
+  font-size: 15px;
+  width: 15px;
+  height: 15px;
+}
+
+/* ===== PROJECT CONTENT ===== */
+.project-content {
+  margin-left: 16px;
+  border-left: 1.5px solid #f0f0f0;
+  margin-right: 6px;
+  padding-left: 8px;
+}
+
+/* ===== FOLDER ===== */
+.folder-item {
+  margin-bottom: 1px;
+}
+
+.folder-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 8px;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: background 0.15s ease;
+  min-height: 32px;
+}
+
+.folder-row:hover {
+  background: #f9fafb;
+}
+
+.folder-row:hover .folder-right {
+  opacity: 1;
+}
+
+.folder-left {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  flex: 1;
+}
+
+.folder-right {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+  flex-shrink: 0;
+}
+
+.folder-icon-sm {
+  font-size: 16px;
+  width: 16px;
+  height: 16px;
+  color: #f59e0b;
+  flex-shrink: 0;
+}
+
+.folder-name {
+  font-size: 13px;
+  font-weight: 500;
+  color: #374151;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ===== FOLDER CONTENT ===== */
+.folder-content {
+  margin-left: 14px;
+  border-left: 1.5px solid #f0f0f0;
+  padding-left: 8px;
+}
+
+/* ===== DOCUMENT ===== */
+.doc-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+  min-height: 28px;
+}
+
+.doc-item:hover {
+  background: #f9fafb;
+}
+
+.doc-item:hover .add-btn {
+  opacity: 1;
+}
+
+.doc-item .add-btn {
+  opacity: 0;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+.doc-emoji {
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+.doc-name {
+  font-size: 13px;
+  color: #374151;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+}
+
+/* ===== INLINE INPUTS ===== */
+.add-folder-row,
+.add-doc-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 8px;
+  background: white;
+  border: 1.5px solid #2563eb;
+  border-radius: 6px;
+  margin: 4px 0;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.08);
+}
+
+.input-icon {
+  font-size: 16px;
+  width: 16px;
+  height: 16px;
+  color: #2563eb;
+  flex-shrink: 0;
+}
+
+.inline-input {
+  flex: 1;
+  border: none;
+  outline: none;
+  font-size: 13px;
+  font-weight: 500;
+  color: #111827;
+  background: transparent;
+  min-width: 0;
+}
+
+.inline-input::placeholder {
+  color: #9ca3af;
+}
+
+.confirm-btn {
+  width: 22px;
+  height: 22px;
+  background: #2563eb;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: background 0.15s ease;
+}
+
+.confirm-btn:hover {
+  background: #1d4ed8;
+}
+
+.confirm-btn mat-icon {
+  font-size: 14px;
+  width: 14px;
+  height: 14px;
+}
+
+/* ===== EMPTY MESSAGES ===== */
+.empty-project-msg,
+.empty-folder-msg {
+  padding: 6px 8px;
+  font-size: 12px;
+  color: #9ca3af;
+  font-style: italic;
+}
+
+/* ===== SCROLLBAR ===== */
+.dashboard::-webkit-scrollbar {
+  width: 4px;
+}
+
+.dashboard::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.dashboard::-webkit-scrollbar-thumb {
+  background: #e5e7eb;
+  border-radius: 4px;
+}

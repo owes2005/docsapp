@@ -7,7 +7,7 @@
         <mat-icon class="brand-icon">edit_note</mat-icon>
       </div>
       <div class="brand-text">
-        <span class="brand-name">DocFlow</span>
+        <span class="brand-name">DocsApp</span>
         <span class="brand-tagline">Document workspace</span>
       </div>
     </div>
@@ -24,35 +24,15 @@
     </button>
   </div>
 
+  <!-- Create Doc -->
+  <div class="quick-actions">
+    <button class="create-doc-btn" (click)="createNewDocument()">
+      <mat-icon>add</mat-icon>
+      <span>Create doc</span>
+    </button>
+  </div>
 
+  <!-- Dashboard (replaces folder section) -->
+  <app-dashboard class="dashboard-section"></app-dashboard>
 
-  <!-- Navigation -->
-  <nav class="sidebar-nav">
-
-
-
-    <mat-divider></mat-divider>
-
-    <!-- Folders -->
-    <div class="nav-group">
-      <div class="group-header">
-        <span class="group-label">Folders</span>
-        <button class="view-all-link" routerLink="/documents">View all</button>
-      </div>
-
-      <a class="nav-link"
-         *ngFor="let folder of (folders$ | async)?.slice(0, 3)">
-        <mat-icon>folder_open</mat-icon>
-        <span>{{folder.name}}</span>
-      </a>
-
-      <a class="nav-link add-link" (click)="createNewFolder()">
-        <mat-icon>add</mat-icon>
-        <span>New folder</span>
-      </a>
-    </div>
-
-
-  
-  </nav>
 </div>
