@@ -1,105 +1,211 @@
 <div class="document-list-page">
-  
+
+  <!-- Search Header -->
   <div class="search-header">
-    <mat-form-field class="search-field" appearance="outline">
-      <mat-icon matPrefix>search</mat-icon>
-      <input matInput placeholder="Search all docs" [(ngModel)]="searchQuery">
-    </mat-form-field>
+    <div class="search-wrapper">
+      <mat-icon class="search-icon">search</mat-icon>
+      <input
+        class="search-input"
+        type="text"
+        placeholder="Search all docs..."
+        [(ngModel)]="searchQuery"
+        (input)="onSearch()">
+      <button class="clear-search" *ngIf="searchQuery" (click)="clearSearch()">
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
   </div>
 
+  <!-- Page Header -->
   <div class="page-header">
-    <div class="header-content">
+    <div class="header-left">
       <div class="breadcrumb">My Workspace</div>
-      <h1 class="page-title">All docs</h1>
+      <h1 class="page-title">All Documents</h1>
     </div>
-    <div class="header-actions">
-      <button mat-raised-button color="primary" class="create-btn" (click)="createDocument()">
+    <div class="header-right">
+      <button class="create-btn" (click)="createDocument()">
         <mat-icon>add</mat-icon>
         Create doc
       </button>
     </div>
   </div>
 
+  <!-- Filter Tabs -->
   <div class="filter-tabs">
-    <button mat-button class="filter-tab active">
-      <mat-icon>schedule</mat-icon>
+    <button class="filter-tab" [class.active]="activeFilter === 'recent'" (click)="setFilter('recent')">
       Recent
     </button>
-    <button mat-button class="filter-tab">
+    <button class="filter-tab" [class.active]="activeFilter === 'favorites'" (click)="setFilter('favorites')">
       Favorites
     </button>
-    <button mat-button class="filter-tab">
+    <button class="filter-tab" [class.active]="activeFilter === 'owned'" (click)="setFilter('owned')">
       Owned by me
     </button>
-    <button mat-button class="filter-tab">
-      Shared
-    </button>
-    
     <div class="tab-spacer"></div>
-    
-    <button mat-button class="sort-btn">
-      Sort by updated
-      <mat-icon>arrow_drop_down</mat-icon>
-    </button>
+    <span class="results-count" *ngIf="searchQuery">
+      {{(filteredDocuments$ | async)?.length}} results
+    </span>
   </div>
 
-  <div class="documents-container">
-    
-    <div class="doc-row" 
-         *ngFor="let doc of documents$ | async" 
-         (click)="openDocument(doc)">
-      
-      <div class="doc-icon-wrapper">
-        <div class="doc-icon">{{doc.icon}}</div>
-      </div>
-      
-      <div class="doc-details">
-        <div class="doc-title">{{doc.title}}</div>
-        <div class="doc-metadata">
-          <span class="folder-badge">My docs</span>
-          <span class="separator">•</span>
-          <span class="timestamp">Updated {{doc.updatedAt | date:'MMM d, y'}}</span>
+  <!-- Scrollable Content -->
+  <div class="page-content">
+
+    <!-- Folders Section -->
+    <ng-container *ngIf="activeFilter === 'recent' && !searchQuery">
+      <div class="section">
+
+        <div class="section-header">
+          <span class="section-label">Folders</span>
+          <button class="new-folder-btn" (click)="showCreateFolder()">
+            <mat-icon>create_new_folder</mat-icon>
+            New folder
+          </button>
         </div>
+
+        <!-- New Folder Input -->
+        <div class="new-folder-input-row" *ngIf="showNewFolderInput">
+          <mat-icon class="folder-input-icon">folder</mat-icon>
+          <input
+            id="new-folder-input"
+            class="folder-name-input"
+            type="text"
+            placeholder="Folder name..."
+            [(ngModel)]="newFolderName"
+            (keydown)="onFolderKeydown($event)">
+          <button class="icon-btn confirm" (click)="createFolder()" matTooltip="Create">
+            <mat-icon>check</mat-icon>
+          </button>
+          <button class="icon-btn cancel" (click)="cancelCreateFolder()" matTooltip="Cancel">
+            <mat-icon>close</mat-icon>
+          </button>
+        </div>
+
+        <!-- Folders Grid -->
+         <div class="folders-grid" *ngIf="(folders$ | async)?.length ?? 0 > 0">
+          <div class="folder-card" *ngFor="let folder of folders$ | async">
+            <div class="folder-card-icon">
+              <mat-icon>folder</mat-icon>
+            </div>
+            <div class="folder-card-info">
+              <span class="folder-card-name">{{folder.name}}</span>
+              <span class="folder-card-meta">Folder</span>
+            </div>
+            <button class="folder-more-btn"
+                    [matMenuTriggerFor]="folderMenu"
+                    (click)="$event.stopPropagation()">
+              <mat-icon>more_horiz</mat-icon>
+            </button>
+            <mat-menu #folderMenu="matMenu">
+              <button mat-menu-item (click)="deleteFolder($event, folder.id)">
+                <mat-icon>delete_outline</mat-icon>
+                <span>Delete folder</span>
+              </button>
+            </mat-menu>
+          </div>
+        </div>
+
+        <!-- No Folders -->
+         <div class="empty-folders" *ngIf="((folders$ | async)?.length ?? 0) === 0 && !showNewFolderInput">
+          <p>No folders yet. <button class="text-btn" (click)="showCreateFolder()">Create one</button></p>
+        </div>
+
       </div>
 
-      <div class="doc-actions">
-        <button mat-icon-button (click)="$event.stopPropagation()" [matMenuTriggerFor]="docMenu">
-          <mat-icon>more_vert</mat-icon>
+      <div class="section-divider"></div>
+    </ng-container>
+
+    <!-- Documents Section -->
+    <div class="section">
+
+      <div class="section-header" *ngIf="activeFilter === 'recent' && !searchQuery">
+        <span class="section-label">Documents</span>
+      </div>
+
+      <!-- Document List -->
+      <ng-container *ngIf="folders$ | async as folders">
+        <div class="doc-row"
+             *ngFor="let doc of filteredDocuments$ | async"
+             (click)="renamingDocId !== doc.id && openDocument(doc)">
+
+          <!-- Icon -->
+          <div class="doc-emoji-icon">{{doc.icon}}</div>
+
+          <!-- Info -->
+          <div class="doc-info">
+            <input *ngIf="renamingDocId === doc.id"
+                   [id]="'rename-input-' + doc.id"
+                   class="rename-input"
+                   type="text"
+                   [(ngModel)]="renamingTitle"
+                   (blur)="saveRename(doc)"
+                   (keydown)="onRenameKeydown($event, doc)"
+                   (click)="$event.stopPropagation()">
+
+            <div class="doc-name" *ngIf="renamingDocId !== doc.id">
+              <span>{{doc.title}}</span>
+              <mat-icon class="star-badge" *ngIf="doc.isFavorite">star</mat-icon>
+            </div>
+
+            <div class="doc-meta">
+              <span class="doc-folder">{{getFolderName(doc.folderId, folders)}}</span>
+              <span class="dot">·</span>
+              <span class="doc-date">Updated {{doc.updatedAt | date:'MMM d, y'}}</span>
+            </div>
+          </div>
+
+          <!-- Actions -->
+          <div class="doc-actions" (click)="$event.stopPropagation()">
+            <button class="action-btn"
+                    [class.active-star]="doc.isFavorite"
+                    (click)="toggleFavorite($event, doc)"
+                    [matTooltip]="doc.isFavorite ? 'Remove favorite' : 'Add to favorites'">
+              <mat-icon>{{doc.isFavorite ? 'star' : 'star_outline'}}</mat-icon>
+            </button>
+            <button class="action-btn" [matMenuTriggerFor]="docMenu">
+              <mat-icon>more_horiz</mat-icon>
+            </button>
+            <mat-menu #docMenu="matMenu">
+              <button mat-menu-item (click)="openDocument(doc)">
+                <mat-icon>open_in_new</mat-icon>
+                <span>Open</span>
+              </button>
+              <button mat-menu-item (click)="startRename($event, doc)">
+                <mat-icon>drive_file_rename_outline</mat-icon>
+                <span>Rename</span>
+              </button>
+              <button mat-menu-item (click)="duplicateDocument($event, doc)">
+                <mat-icon>content_copy</mat-icon>
+                <span>Duplicate</span>
+              </button>
+              <button mat-menu-item (click)="toggleFavorite($event, doc)">
+                <mat-icon>{{doc.isFavorite ? 'star_outline' : 'star'}}</mat-icon>
+                <span>{{doc.isFavorite ? 'Remove favorite' : 'Add to favorites'}}</span>
+              </button>
+              <mat-divider></mat-divider>
+              <button mat-menu-item class="danger-item" (click)="deleteDocument($event, doc.id)">
+                <mat-icon>delete_outline</mat-icon>
+                <span>Delete</span>
+              </button>
+            </mat-menu>
+          </div>
+
+        </div>
+      </ng-container>
+
+      <!-- Empty State -->
+      <div class="empty-state"
+           *ngIf="(filteredDocuments$ | async)?.length === 0">
+        <div class="empty-illustration">
+          <mat-icon>{{searchQuery ? 'search_off' : activeFilter === 'favorites' ? 'star_outline' : 'description'}}</mat-icon>
+        </div>
+        <h3>{{searchQuery ? 'No results for "' + searchQuery + '"' : activeFilter === 'favorites' ? 'No favorites yet' : 'No documents yet'}}</h3>
+        <p>{{searchQuery ? 'Try a different search term' : activeFilter === 'favorites' ? 'Star a document to see it here' : 'Create your first document to get started'}}</p>
+        <button class="create-btn" *ngIf="!searchQuery && activeFilter !== 'favorites'" (click)="createDocument()">
+          <mat-icon>add</mat-icon>
+          Create doc
         </button>
-        
-        <mat-menu #docMenu="matMenu">
-          <button mat-menu-item (click)="openDocument(doc)">
-            <mat-icon>open_in_new</mat-icon>
-            <span>Open</span>
-          </button>
-          <button mat-menu-item>
-            <mat-icon>content_copy</mat-icon>
-            <span>Duplicate</span>
-          </button>
-          <button mat-menu-item>
-            <mat-icon>star_outline</mat-icon>
-            <span>Add to favorites</span>
-          </button>
-          <mat-divider></mat-divider>
-          <button mat-menu-item (click)="deleteDocument($event, doc.id)">
-            <mat-icon>delete</mat-icon>
-            <span>Delete</span>
-          </button>
-        </mat-menu>
       </div>
-      
-    </div>
 
-    <div class="empty-state" *ngIf="(documents$ | async)?.length === 0">
-      <div class="empty-icon">
-        <mat-icon>description</mat-icon>
-      </div>
-      <h3>No documents yet</h3>
-      <p>Create your first doc to get started</p>
-      <button mat-raised-button color="primary" (click)="createDocument()">
-        <mat-icon>add</mat-icon>
-        Create doc
-      </button>
     </div>
 
   </div>

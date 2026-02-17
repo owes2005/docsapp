@@ -1,6 +1,6 @@
 .main-sidebar {
   width: 260px;
-  height: 100vh;
+  height: 100%;
   background: #fafbfc;
   border-right: 1px solid #e1e4e8;
   display: flex;
@@ -13,37 +13,99 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 16px;
+  gap: 10px;
+  padding: 14px 14px 12px;
   border-bottom: 1px solid #e1e4e8;
+  flex-shrink: 0;
+  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+}
+
+.brand-content {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.brand-mark {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  background: #111827;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  box-shadow: 0 8px 18px rgba(17, 24, 39, 0.18);
   flex-shrink: 0;
 }
 
+.brand-icon {
+  width: 18px;
+  height: 18px;
+  font-size: 18px;
+}
 
+.brand-text {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.brand-name {
+  font-size: 18px;
+  line-height: 1.1;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+  color: #111827;
+}
+
+.brand-tagline {
+  font-size: 11px;
+  line-height: 1.2;
+  color: #6b7280;
+}
+
+.notifications-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  color: #4b5563;
+  flex-shrink: 0;
+}
+
+.notifications-btn:hover {
+  background: #eef2f7;
+}
 
 /* Workspace */
 .workspace-section {
-  padding: 12px;
+  padding: 10px 12px;
   flex-shrink: 0;
 }
 
 .workspace-btn {
   width: 100%;
-  height: 44px;
+  height: 46px;
   padding: 8px 12px;
   display: flex;
   align-items: center;
   gap: 10px;
-  border-radius: 6px;
+  border-radius: 10px;
   background: white;
   border: 1px solid #e1e4e8;
   cursor: pointer;
   font-size: 14px;
-  font-weight: 600;
+  font-weight: 700;
   color: #24292e;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
 }
 
 .workspace-btn:hover {
-  background: #f6f8fa;
+  background: #f8fafc;
+  border-color: #d1d5db;
+  box-shadow: 0 4px 12px rgba(17, 24, 39, 0.06);
 }
 
 .workspace-avatar {
@@ -75,7 +137,7 @@
 
 /* Create Doc Button */
 .quick-actions {
-  padding: 0 12px 12px 12px;
+  padding: 2px 12px 12px;
   flex-shrink: 0;
 }
 

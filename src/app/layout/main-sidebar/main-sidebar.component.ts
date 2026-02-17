@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { DocumentService } from 'src/app/core/services/document.service';
-import { Document } from 'src/app/core/models/document.model';
+import { Document, Folder } from 'src/app/core/models/document.model';
 import { Observable } from 'rxjs';
 
 @Component({
@@ -11,6 +11,7 @@ import { Observable } from 'rxjs';
 })
 export class MainSidebarComponent implements OnInit {
   documents$: Observable<Document[]>;
+  folders$: Observable<Folder[]>;
   currentWorkspace = 'My Workspace';
 
   constructor(
@@ -18,31 +19,30 @@ export class MainSidebarComponent implements OnInit {
     private router: Router
   ) {
     this.documents$ = this.documentService.documents$;
+    this.folders$ = this.documentService.folders$;
   }
 
   ngOnInit(): void {
-    this.documentService.getDocuments().subscribe();
-  }
-
-  navigateTo(route: string): void {
-    this.router.navigate([route]);
+    this.documentService.getFolders().subscribe();
   }
 
   openDocument(doc: Document): void {
     this.router.navigate(['/document', doc.id]);
   }
 
-  createNewDocument(): void {
-    const newDoc = {
-      id: 'doc' + Date.now(),
-      workspaceId: 'ws1',
-      title: 'Untitled',
-      icon: '📄',
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    };
-    this.documentService.createDocument(newDoc).subscribe(doc => {
-      this.router.navigate(['/document', doc.id]);
+
+
+  navigateToRecent(): void {
+    this.router.navigate(['/documents'], {
+      queryParams: { filter: 'recent' }
     });
+  }
+
+
+  createNewFolder(): void {
+    const name = prompt('Enter folder name:');
+    if (name && name.trim()) {
+      this.documentService.createFolder(name.trim()).subscribe();
+    }
   }
 }

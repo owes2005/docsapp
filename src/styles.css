@@ -1,31 +1,82 @@
 @import '@angular/material/prebuilt-themes/indigo-pink.css';
 
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
+/* ===== 80% SCALE APPROACH ===== */
+html {
+  height: 100%;
+  width: 100%;
 }
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
-  height: 100vh;
+  transform: scale(0.8);
+  transform-origin: top left;
+  width: 125%;
+  height: 125%;
   overflow: hidden;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto',
+    'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans',
+    'Helvetica Neue', sans-serif;
   background: #ffffff;
   color: #24292e;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-html, body {
-  height: 100%;
+/* ===== RESET ===== */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  -webkit-tap-highlight-color: transparent;
 }
 
-h1, h2, h3, h4, h5, h6 {
-  font-weight: 600;
-  line-height: 1.2;
+/* ===== REMOVE ALL FOCUS OUTLINES ===== */
+*:focus,
+*:focus-visible,
+*:focus-within {
+  outline: none !important;
+  box-shadow: none !important;
 }
 
-/* Material Overrides */
+button:focus,
+button:active,
+a:focus,
+a:active,
+input:focus,
+textarea:focus,
+select:focus,
+div:focus,
+[tabindex]:focus {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+.mat-button-focus-overlay {
+  display: none !important;
+  opacity: 0 !important;
+  background: transparent !important;
+}
+
+.mat-focus-indicator::before {
+  display: none !important;
+}
+
+.cdk-focused .mat-button-focus-overlay,
+.cdk-mouse-focused .mat-button-focus-overlay,
+.cdk-keyboard-focused .mat-button-focus-overlay {
+  opacity: 0 !important;
+}
+
+.mat-icon-button:focus,
+.mat-button:focus,
+.mat-raised-button:focus,
+.mat-stroked-button:focus,
+.mat-flat-button:focus,
+.mat-menu-item:focus {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* ===== MATERIAL OVERRIDES ===== */
 .mat-raised-button.mat-primary {
   background-color: #24292e;
   color: white;
@@ -57,7 +108,11 @@ h1, h2, h3, h4, h5, h6 {
   color: #0366d6;
 }
 
-/* Image Viewer Dialog */
+.mat-ripple-element {
+  background-color: rgba(0, 0, 0, 0.05) !important;
+}
+
+/* ===== IMAGE VIEWER DIALOG ===== */
 .image-viewer-dialog {
   padding: 0 !important;
 }
@@ -73,7 +128,7 @@ h1, h2, h3, h4, h5, h6 {
   background: rgba(0, 0, 0, 0.95);
 }
 
-/* Scrollbar */
+/* ===== SCROLLBAR ===== */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
@@ -92,24 +147,12 @@ h1, h2, h3, h4, h5, h6 {
   background: #959da5;
 }
 
-/* Transitions */
-* {
-  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
-}
-
+/* ===== TRANSITIONS ===== */
 button {
-  transition: all 0.15s ease !important;
+  transition: background-color 0.15s ease, color 0.15s ease !important;
 }
 
-/* Focus States */
-button:focus,
-input:focus,
-textarea:focus {
-  outline: 2px solid #0366d6;
-  outline-offset: 2px;
-}
-
-/* Spacing Utilities */
+/* ===== SPACING UTILITIES ===== */
 .mb-8 { margin-bottom: 8px; }
 .mb-16 { margin-bottom: 16px; }
 .mb-24 { margin-bottom: 24px; }

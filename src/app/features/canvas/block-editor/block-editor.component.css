@@ -2,7 +2,7 @@
   max-width: 900px;
   margin: 0 auto;
   padding: 40px 60px 200px 60px;
-  min-height: 100vh;
+  min-height: 100%;
   background: white;
   position: relative;
 }

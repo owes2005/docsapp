@@ -1,22 +1,31 @@
 .app-shell {
   display: flex;
   flex-direction: column;
-  height: 100vh;
-  width: 100vw;
+  width: 100%;
+  height: 100%;
   overflow: hidden;
   background: #ffffff;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
 }
 
+/* Top Toolbar */
 .doc-toolbar {
   background: white;
   color: #24292e;
   border-bottom: 1px solid #e1e4e8;
   height: 56px;
+  min-height: 56px;
   padding: 0 16px;
   box-shadow: none;
   display: flex;
   justify-content: space-between;
   align-items: center;
+  flex-shrink: 0;
+  width: 100%;
 }
 
 .toolbar-left {
@@ -65,13 +74,16 @@
   font-size: 18px;
 }
 
+/* Main Layout */
 .main-layout {
   display: flex;
-  height: calc(100vh - 56px);
+  flex: 1;
+  overflow: hidden;
+  width: 100%;
 }
 
 .main-layout.no-toolbar {
-  height: 100vh;
+  flex: 1;
 }
 
 .main-sidebar {
@@ -81,14 +93,7 @@
 .content-area {
   flex: 1;
   overflow-y: auto;
+  overflow-x: hidden;
   background: #ffffff;
-}
-
-@media (max-width: 768px) {
-  .main-sidebar {
-    position: absolute;
-    z-index: 999;
-    height: 100%;
-    box-shadow: 2px 0 8px rgba(0,0,0,0.15);
-  }
+  min-width: 0;
 }
