@@ -51,13 +51,6 @@
     <!-- Main Navigation Sidebar -->
     <aside class="sidebar-container" [class.collapsed]="!showMainSidebar">
       <app-main-sidebar class="main-sidebar"></app-main-sidebar>
-      <button
-        type="button"
-        class="sidebar-toggle-btn"
-        (click)="toggleMainSidebar()"
-        [attr.aria-label]="showMainSidebar ? 'Collapse sidebar' : 'Expand sidebar'">
-        <mat-icon>{{ showMainSidebar ? 'chevron_left' : 'chevron_right' }}</mat-icon>
-      </button>
     </aside>
 
     <!-- Content Area -->

@@ -36,9 +36,9 @@
          class="content-block"
          [class.editing]="editingBlockId === block.id">
       
-      <!-- Drag Handle -->
+      <!-- Block Controls -->
       <div class="block-controls">
-        <button mat-icon-button cdkDragHandle class="drag-handle">
+        <button class="drag-handle" cdkDragHandle>
           <mat-icon>drag_indicator</mat-icon>
         </button>
       </div>
@@ -217,12 +217,20 @@
 
       </div>
 
-      <!-- Block Actions (on hover) -->
+      <!-- Block Actions -->
       <div class="block-actions">
-        <button mat-icon-button [matMenuTriggerFor]="blockMenu" class="block-menu-btn">
-          <mat-icon>more_vert</mat-icon>
+        <button class="block-action-btn insert-below"
+                matTooltip="Insert block below"
+                (click)="insertBlockBelow(block.id)">
+          <mat-icon>add</mat-icon>
         </button>
         
+        <button class="block-action-btn"
+                [matMenuTriggerFor]="blockMenu"
+                matTooltip="More options">
+          <mat-icon>more_horiz</mat-icon>
+        </button>
+
         <mat-menu #blockMenu="matMenu">
           <button mat-menu-item (click)="duplicateBlock(block.id)">
             <mat-icon>content_copy</mat-icon>

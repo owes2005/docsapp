@@ -180,6 +180,30 @@ export class BlockEditorComponent implements OnInit, OnChanges {
     }
   }
 
+  insertBlockBelow(blockId: string): void {
+    const block = this.blocks.find(b => b.id === blockId);
+    if (!block) return;
+
+    const newBlock: ContentBlock = {
+      id: 'block' + Date.now(),
+      type: 'text',
+      content: '',
+      order: block.order + 1
+    };
+
+    this.blocks.splice(block.order + 1, 0, newBlock);
+    this.reorderBlocks();
+    this.savePage();
+
+    // Focus the new block
+    setTimeout(() => {
+      const newElement = document.querySelector(`[data-block-id="${newBlock.id}"]`);
+      if (newElement) {
+        (newElement as HTMLElement).focus();
+      }
+    }, 100);
+  }
+
   dropBlock(event: CdkDragDrop<ContentBlock[]>): void {
     moveItemInArray(this.blocks, event.previousIndex, event.currentIndex);
     this.reorderBlocks();

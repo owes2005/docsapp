@@ -80,15 +80,41 @@
   flex: 1;
   overflow: hidden;
   width: 100%;
+  position: relative;
 }
 
 .main-layout.no-toolbar {
   flex: 1;
 }
 
+.sidebar-container {
+  display: flex;
+  width: 260px;
+  min-width: 260px;
+  max-width: 260px;
+  transition: width 200ms ease, min-width 200ms ease, max-width 200ms ease;
+  background: #ffffff;
+  overflow: visible;
+}
+
+.sidebar-container.collapsed {
+  width: 0;
+  min-width: 0;
+  max-width: 0;
+  border-right: 0;
+}
+
+.sidebar-container.collapsed .main-sidebar {
+  opacity: 0;
+  pointer-events: none;
+}
+
 .main-sidebar {
   flex-shrink: 0;
+  width: 100%;
+  transition: opacity 150ms ease;
 }
+
 
 .content-area {
   flex: 1;

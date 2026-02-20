@@ -5,38 +5,26 @@
   
   <div class="toolbar-content">
     
-    <button mat-icon-button 
-            (mousedown)="$event.preventDefault()"
-            (click)="execCommand('bold')" 
+    <button (mousedown)="$event.preventDefault(); execCommand('bold')" 
             matTooltip="Bold (⌘B)">
       <mat-icon>format_bold</mat-icon>
     </button>
     
-    <button mat-icon-button 
-            (mousedown)="$event.preventDefault()"
-            (click)="execCommand('italic')" 
+    <button (mousedown)="$event.preventDefault(); execCommand('italic')" 
             matTooltip="Italic (⌘I)">
       <mat-icon>format_italic</mat-icon>
     </button>
     
-    <button mat-icon-button 
-            (mousedown)="$event.preventDefault()"
-            (click)="execCommand('underline')" 
+    <button (mousedown)="$event.preventDefault(); execCommand('underline')" 
             matTooltip="Underline (⌘U)">
       <mat-icon>format_underlined</mat-icon>
     </button>
     
-    <button mat-icon-button 
-            (mousedown)="$event.preventDefault()"
-            (click)="execCommand('strikeThrough')" 
-            matTooltip="Strikethrough">
-      <mat-icon>format_strikethrough</mat-icon>
-    </button>
+   
     
     <mat-divider [vertical]="true"></mat-divider>
     
-    <button mat-icon-button 
-            [matMenuTriggerFor]="colorMenu"
+    <button [matMenuTriggerFor]="colorMenu"
             (mousedown)="$event.preventDefault()"
             matTooltip="Text color">
       <mat-icon>format_color_text</mat-icon>
@@ -69,8 +57,7 @@
       </button>
     </mat-menu>
     
-    <button mat-icon-button 
-            [matMenuTriggerFor]="bgMenu"
+    <button [matMenuTriggerFor]="bgMenu"
             (mousedown)="$event.preventDefault()"
             matTooltip="Highlight">
       <mat-icon>format_color_fill</mat-icon>
@@ -99,11 +86,10 @@
       </button>
     </mat-menu>
     
+
     <mat-divider [vertical]="true"></mat-divider>
     
-    <button mat-icon-button 
-            (mousedown)="$event.preventDefault()"
-            (click)="execCommand('formatBlock', 'pre')" 
+    <button (mousedown)="$event.preventDefault(); execCommand('formatBlock', 'pre')" 
             matTooltip="Inline code">
       <mat-icon>code</mat-icon>
     </button>
