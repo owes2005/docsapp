@@ -327,8 +327,8 @@ export class BlockEditorComponent implements OnInit, OnChanges {
   uploadImage(event: any, blockId: string): void {
     const file = event.target.files[0];
     if (file) {
-      if (file.size > 5 * 1024 * 1024) {
-        alert('Image size should be less than 5MB');
+      if (file.size > 100 * 1024 * 1024) {
+        alert('Image size should be less than 100MB');
         return;
       }
       
