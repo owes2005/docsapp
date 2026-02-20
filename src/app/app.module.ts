@@ -34,7 +34,6 @@ import { DocumentEditorComponent } from './features/document/document-editor/doc
 import { BlockEditorComponent } from './features/canvas/block-editor/block-editor.component';
 import { TextToolbarComponent } from './shared/components/text-toolbar/text-toolbar.component';
 import { ImageViewerComponent } from './shared/components/image-viewer/image-viewer.component';
-import { DashboardComponent } from './features/dashboard/dashboard.component';
 import { ProjectComponent } from './features/project/project.component';
 
 @NgModule({
@@ -47,7 +46,6 @@ import { ProjectComponent } from './features/project/project.component';
     BlockEditorComponent,
     TextToolbarComponent,
     ImageViewerComponent,
-    DashboardComponent,
     ProjectComponent
   ],
   imports: [
