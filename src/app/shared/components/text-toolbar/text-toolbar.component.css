@@ -72,16 +72,16 @@ mat-divider {
   border: 1px solid rgba(0, 0, 0, 0.1);
 }
 
-/* Menu styling */
-::ng-deep .mat-menu-panel {
-  background: #1f2937;
-  color: white;
+/* Toolbar menu styling only (prevent global menu override) */
+::ng-deep .text-toolbar-menu.mat-menu-panel {
+  background: #ffffff;
+  color: #111827;
 }
 
-::ng-deep .mat-menu-item {
-  color: rgba(255, 255, 255, 0.9);
+::ng-deep .text-toolbar-menu .mat-menu-item {
+  color: #111827;
 }
 
-::ng-deep .mat-menu-item:hover {
-  background: rgba(255, 255, 255, 0.1);
+::ng-deep .text-toolbar-menu .mat-menu-item:hover {
+  background: #f3f4f6;
 }
