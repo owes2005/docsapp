@@ -1,6 +1,7 @@
-import { Component, Input, OnInit } from '@angular/core';
+import { Component, Input, OnInit, OnChanges } from '@angular/core';
 import { CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-drop';
 import { Page, ContentBlock, BlockType } from 'src/app/core/models/page.model';
+import { PageService } from 'src/app/core/services/page.service';
 import { HttpClient } from '@angular/common/http';
 import { MatDialog } from '@angular/material/dialog';
 import { ImageViewerComponent } from 'src/app/shared/components/image-viewer/image-viewer.component';
@@ -10,7 +11,7 @@ import { ImageViewerComponent } from 'src/app/shared/components/image-viewer/ima
   templateUrl: './block-editor.component.html',
   styleUrls: ['./block-editor.component.css']
 })
-export class BlockEditorComponent implements OnInit {
+export class BlockEditorComponent implements OnInit, OnChanges {
   @Input() page!: Page;
 
   blocks: ContentBlock[] = [];
@@ -93,14 +94,36 @@ export class BlockEditorComponent implements OnInit {
 
   constructor(
     private http: HttpClient,
-    private dialog: MatDialog
+    private dialog: MatDialog,
+    private pageService: PageService
   ) {}
 
   ngOnInit(): void {
     if (this.page) {
-      this.pageTitle = this.page.title;
-      this.blocks = this.page.content.blocks.sort((a, b) => a.order - b.order);
+      this.loadPageData();
     }
+  }
+
+  ngOnChanges(changes: any): void {
+    if (changes.page && changes.page.currentValue) {
+      this.loadPageData();
+    }
+  }
+
+  loadPageData(): void {
+    // Deep clone to ensure independent data
+    const pageCopy = JSON.parse(JSON.stringify(this.page));
+    this.pageTitle = pageCopy.title || 'Untitled page';
+    this.blocks = pageCopy.content?.blocks || [];
+    
+    // Ensure each block has required properties
+    this.blocks.forEach((block, index) => {
+      if (!block.id) block.id = 'block' + Date.now() + index;
+      if (block.order === undefined) block.order = index;
+    });
+
+    // Sort blocks by order
+    this.blocks.sort((a, b) => a.order - b.order);
   }
 
   updatePageTitle(event: any): void {
@@ -124,6 +147,7 @@ export class BlockEditorComponent implements OnInit {
     this.blocks.push(newBlock);
     this.showSlashMenu = false;
     this.editingBlockId = newBlock.id;
+    this.savePage();
   }
 
   updateBlock(blockId: string, event: any): void {
@@ -138,14 +162,15 @@ export class BlockEditorComponent implements OnInit {
 
   deleteBlock(blockId: string): void {
     this.blocks = this.blocks.filter(b => b.id !== blockId);
+    this.reorderBlocks();
     this.savePage();
   }
 
   duplicateBlock(blockId: string): void {
     const block = this.blocks.find(b => b.id === blockId);
     if (block) {
-      const duplicate = {
-        ...block,
+      const duplicate: ContentBlock = {
+        ...JSON.parse(JSON.stringify(block)), // Deep clone
         id: 'block' + Date.now(),
         order: block.order + 1
       };
@@ -262,6 +287,7 @@ export class BlockEditorComponent implements OnInit {
     this.blocks.splice(afterBlock.order + 1, 0, newBlock);
     this.reorderBlocks();
     this.editingBlockId = newBlock.id;
+    this.savePage();
     
     setTimeout(() => {
       const newElement = document.querySelector(`[data-block-id="${newBlock.id}"]`);
@@ -278,6 +304,7 @@ export class BlockEditorComponent implements OnInit {
         activeBlock.type = type;
         if (level) activeBlock.level = level;
         this.showSlashMenu = false;
+        this.savePage();
         return;
       }
     }
@@ -364,12 +391,14 @@ export class BlockEditorComponent implements OnInit {
         const block = this.blocks.find(b => b.id === blockId);
         if (block) {
           if (!block.content) {
-            block.content = [];
+            block.content = [] as any;
           }
-          block.content.push({
-            url: e.target.result,
-            caption: ''
-          });
+          if (Array.isArray(block.content)) {
+            block.content.push({
+              url: e.target.result,
+              caption: ''
+            } as any);
+          }
           this.savePage();
         }
       };
@@ -407,15 +436,30 @@ export class BlockEditorComponent implements OnInit {
   }
 
   savePage(): void {
-    const updatedPage = {
-      ...this.page,
-      title: this.pageTitle,
-      content: {
-        blocks: this.blocks
-      }
-    };
-    
-    this.http.put(`http://localhost:3000/pages/${this.page.id}`, updatedPage)
-      .subscribe();
+    if (this.page) {
+      const updatedPage: Partial<Page> = {
+        title: this.pageTitle,
+        content: {
+          blocks: this.blocks.map(block => ({
+            id: block.id,
+            type: block.type,
+            content: block.content,
+            order: block.order,
+            level: block.level,
+            imageUrl: block.imageUrl,
+            imageCaption: block.imageCaption
+          }))
+        }
+      };
+
+      this.pageService.updatePage(this.page.id, updatedPage).subscribe(
+        updated => {
+          console.log('Page saved successfully');
+        },
+        error => {
+          console.error('Error saving page:', error);
+        }
+      );
+    }
   }
 }

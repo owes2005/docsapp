@@ -14,13 +14,9 @@ export class DashboardComponent implements OnInit {
   folders: Folder[] = [];
   documents: Document[] = [];
 
-  // Track which projects are expanded
   expandedProjects: Set<string> = new Set();
-
-  // Track which folders are expanded
   expandedFolders: Set<string> = new Set();
 
-  // Track inline inputs
   addingFolderToProject: string | null = null;
   newFolderName = '';
 
@@ -39,6 +35,11 @@ export class DashboardComponent implements OnInit {
   }
 
   // ===== PROJECT =====
+
+  openProject(project: Project, event: Event): void {
+    event.stopPropagation();
+    this.router.navigate(['/project', project.id]);
+  }
 
   toggleProject(projectId: string): void {
     if (this.expandedProjects.has(projectId)) {
@@ -78,7 +79,6 @@ export class DashboardComponent implements OnInit {
     event.stopPropagation();
     this.addingFolderToProject = projectId;
     this.newFolderName = '';
-    // Make sure project is expanded
     this.expandedProjects.add(projectId);
     setTimeout(() => {
       const input = document.getElementById('folder-input-' + projectId);

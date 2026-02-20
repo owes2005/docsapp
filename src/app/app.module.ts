@@ -4,7 +4,7 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { HttpClientModule } from '@angular/common/http';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 
-// Material Modules
+// Angular Material
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -18,27 +18,24 @@ import { MatDividerModule } from '@angular/material/divider';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatDialogModule } from '@angular/material/dialog';
 import { MatBadgeModule } from '@angular/material/badge';
+import { MatChipsModule } from '@angular/material/chips';
+import { MatSelectModule } from '@angular/material/select';
 import { DragDropModule } from '@angular/cdk/drag-drop';
 
 // Routing
 import { AppRoutingModule } from './app-routing.module';
 
-// Root Component
+// Components
 import { AppComponent } from './app.component';
-
-// Layout Components
 import { AppShellComponent } from './layout/app-shell/app-shell.component';
 import { MainSidebarComponent } from './layout/main-sidebar/main-sidebar.component';
-
-// Feature Components
 import { DocumentListComponent } from './features/document/document-list/document-list.component';
 import { DocumentEditorComponent } from './features/document/document-editor/document-editor.component';
 import { BlockEditorComponent } from './features/canvas/block-editor/block-editor.component';
-
-// Shared Components
 import { TextToolbarComponent } from './shared/components/text-toolbar/text-toolbar.component';
 import { ImageViewerComponent } from './shared/components/image-viewer/image-viewer.component';
 import { DashboardComponent } from './features/dashboard/dashboard.component';
+import { ProjectComponent } from './features/project/project.component';
 
 @NgModule({
   declarations: [
@@ -50,7 +47,8 @@ import { DashboardComponent } from './features/dashboard/dashboard.component';
     BlockEditorComponent,
     TextToolbarComponent,
     ImageViewerComponent,
-    DashboardComponent
+    DashboardComponent,
+    ProjectComponent
   ],
   imports: [
     BrowserModule,
@@ -59,8 +57,8 @@ import { DashboardComponent } from './features/dashboard/dashboard.component';
     FormsModule,
     ReactiveFormsModule,
     AppRoutingModule,
-    
-    // Material Modules
+
+    // Material
     MatToolbarModule,
     MatButtonModule,
     MatIconModule,
@@ -74,6 +72,8 @@ import { DashboardComponent } from './features/dashboard/dashboard.component';
     MatTooltipModule,
     MatDialogModule,
     MatBadgeModule,
+    MatChipsModule,
+    MatSelectModule,
     DragDropModule
   ],
   providers: [],

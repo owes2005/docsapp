@@ -1,35 +1,41 @@
 <div class="dashboard">
 
   <div class="dashboard-header">
-    <h2 class="dashboard-title">Dashboard</h2>
+    <h2 class="dashboard-title">Projects</h2>
   </div>
 
-  <!-- Projects List -->
   <div class="projects-list">
 
     <div class="project-item" *ngFor="let project of projects">
 
       <!-- Project Row -->
-      <div class="project-row" (click)="toggleProject(project.id)">
-        <div class="project-left">
+      <div class="project-row">
+
+        <!-- Chevron (expand/collapse) -->
+        <button class="chevron-btn" (click)="toggleProject(project.id)">
           <mat-icon class="chevron" [class.expanded]="isProjectExpanded(project.id)">
             chevron_right
           </mat-icon>
+        </button>
+
+        <!-- Project Name (click to open project page) -->
+        <div class="project-main" (click)="openProject(project, $event)">
           <div class="project-icon" [style.background]="project.color">
             {{project.icon}}
           </div>
           <span class="project-name">{{project.name}}</span>
         </div>
-        <div class="project-right">
-          <button class="add-btn"
-                  matTooltip="Add folder"
-                  (click)="showAddFolder(project.id, $event)">
-            <mat-icon>create_new_folder</mat-icon>
-          </button>
-        </div>
+
+        <!-- Add Folder Button -->
+        <button class="add-btn"
+                matTooltip="Add folder"
+                (click)="showAddFolder(project.id, $event)">
+          <mat-icon>create_new_folder</mat-icon>
+        </button>
+
       </div>
 
-      <!-- Project Content (Folders) -->
+      <!-- Project Content -->
       <div class="project-content" *ngIf="isProjectExpanded(project.id)">
 
         <!-- Add Folder Input -->
@@ -53,29 +59,34 @@
              *ngFor="let folder of getFoldersForProject(project.id)">
 
           <!-- Folder Row -->
-          <div class="folder-row" (click)="toggleFolder(folder.id)">
-            <div class="folder-left">
+          <div class="folder-row">
+
+            <button class="chevron-btn" (click)="toggleFolder(folder.id)">
               <mat-icon class="chevron" [class.expanded]="isFolderExpanded(folder.id)">
                 chevron_right
               </mat-icon>
+            </button>
+
+            <div class="folder-main" (click)="toggleFolder(folder.id)">
               <mat-icon class="folder-icon-sm">folder</mat-icon>
               <span class="folder-name">{{folder.name}}</span>
             </div>
-            <div class="folder-right">
-              <button class="add-btn"
-                      matTooltip="Add document"
-                      (click)="showAddDoc(folder.id, $event)">
-                <mat-icon>note_add</mat-icon>
-              </button>
-              <button class="add-btn danger"
-                      matTooltip="Delete folder"
-                      (click)="deleteFolder(folder.id, $event)">
-                <mat-icon>delete</mat-icon>
-              </button>
-            </div>
+
+            <button class="add-btn"
+                    matTooltip="Add document"
+                    (click)="showAddDoc(folder.id, $event)">
+              <mat-icon>note_add</mat-icon>
+            </button>
+
+            <button class="add-btn danger"
+                    matTooltip="Delete folder"
+                    (click)="deleteFolder(folder.id, $event)">
+              <mat-icon>delete</mat-icon>
+            </button>
+
           </div>
 
-          <!-- Folder Content (Documents) -->
+          <!-- Folder Content -->
           <div class="folder-content" *ngIf="isFolderExpanded(folder.id)">
 
             <!-- Add Doc Input -->
@@ -100,27 +111,27 @@
                  (click)="openDocument(doc.id)">
               <span class="doc-emoji">{{doc.icon}}</span>
               <span class="doc-name">{{doc.title}}</span>
-              <button class="add-btn danger"
-                      matTooltip="Delete document"
+              <button class="add-btn danger doc-delete"
+                      matTooltip="Delete"
                       (click)="deleteDocument(doc.id, $event)">
                 <mat-icon>delete</mat-icon>
               </button>
             </div>
 
-            <!-- Empty folder -->
-            <div class="empty-folder-msg"
+            <!-- Empty -->
+            <div class="empty-msg"
                  *ngIf="getDocsForFolder(folder.id).length === 0 && addingDocToFolder !== folder.id">
-              <span>No documents</span>
+              No documents yet
             </div>
 
           </div>
 
         </div>
 
-        <!-- No folders yet -->
-        <div class="empty-project-msg"
+        <!-- No Folders -->
+        <div class="empty-msg"
              *ngIf="getFoldersForProject(project.id).length === 0 && addingFolderToProject !== project.id">
-          <span>No folders yet</span>
+          No folders yet
         </div>
 
       </div>

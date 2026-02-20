@@ -14,12 +14,18 @@ export class PageService {
 
   constructor(private http: HttpClient) {}
 
-  getPages(documentId: string): Observable<Page[]> {
-    return this.http.get<Page[]>(`${this.apiUrl}/pages?documentId=${documentId}`).pipe(
-      tap(pages => {
-        const sorted = pages.sort((a, b) => a.order - b.order);
-        this.pagesSubject.next(sorted);
-      }),
+  getPages(): Observable<Page[]> {
+    return this.http.get<Page[]>(`${this.apiUrl}/pages`).pipe(
+      tap(pages => this.pagesSubject.next(pages)),
+      catchError(this.handleError)
+    );
+  }
+
+  getPagesByDocument(documentId: string): Observable<Page[]> {
+    return this.http.get<Page[]>(
+      `${this.apiUrl}/pages?documentId=${documentId}`
+    ).pipe(
+      tap(pages => this.pagesSubject.next(pages)),
       catchError(this.handleError)
     );
   }
@@ -31,56 +37,90 @@ export class PageService {
   }
 
   createPage(page: Partial<Page>): Observable<Page> {
-    return this.http.post<Page>(`${this.apiUrl}/pages`, page).pipe(
-      tap(() => page.documentId && this.getPages(page.documentId).subscribe()),
-      catchError(this.handleError)
-    );
-  }
-
-  updatePage(id: string, page: Partial<Page>): Observable<Page> {
-    return this.http.put<Page>(`${this.apiUrl}/pages/${id}`, page).pipe(
-      tap(() => page.documentId && this.getPages(page.documentId).subscribe()),
-      catchError(this.handleError)
-    );
-  }
-
-  deletePage(id: string, documentId: string): Observable<void> {
-    return this.http.delete<void>(`${this.apiUrl}/pages/${id}`).pipe(
-      tap(() => this.getPages(documentId).subscribe()),
-      catchError(this.handleError)
-    );
-  }
-
-  duplicatePage(pageId: string): Observable<Page> {
-    return this.getPage(pageId).pipe(
-      tap(originalPage => {
-        const duplicatedPage = {
-          ...originalPage,
-          id: 'page' + Date.now(),
-          title: originalPage.title + ' (Copy)',
-          order: originalPage.order + 1
-        };
-        delete (duplicatedPage as any).id;
-        this.createPage(duplicatedPage).subscribe();
+    // Create a completely new page with empty blocks
+    const newPage = {
+      ...page,
+      content: {
+        blocks: [
+          {
+            id: 'block' + Date.now(),
+            type: 'text',
+            content: '',
+            order: 0
+          }
+        ]
+      }
+    };
+    
+    return this.http.post<Page>(`${this.apiUrl}/pages`, newPage).pipe(
+      tap(createdPage => {
+        const currentPages = this.pagesSubject.value;
+        this.pagesSubject.next([...currentPages, createdPage]);
       }),
       catchError(this.handleError)
     );
   }
 
-  reorderPages(pages: Page[]): Observable<any> {
+  updatePage(id: string, page: Partial<Page>): Observable<Page> {
+    return this.http.patch<Page>(`${this.apiUrl}/pages/${id}`, page).pipe(
+      tap(updatedPage => {
+        const currentPages = this.pagesSubject.value;
+        const index = currentPages.findIndex(p => p.id === id);
+        if (index !== -1) {
+          currentPages[index] = updatedPage;
+          this.pagesSubject.next([...currentPages]);
+        }
+      }),
+      catchError(this.handleError)
+    );
+  }
+
+  deletePage(id: string): Observable<void> {
+    return this.http.delete<void>(`${this.apiUrl}/pages/${id}`).pipe(
+      tap(() => {
+        const currentPages = this.pagesSubject.value;
+        this.pagesSubject.next(currentPages.filter(p => p.id !== id));
+      }),
+      catchError(this.handleError)
+    );
+  }
+
+  duplicatePage(page: Page): Observable<Page> {
+    // Deep clone the page content to avoid reference issues
+    const duplicatedPage: Partial<Page> = {
+      documentId: page.documentId,
+      title: page.title + ' (Copy)',
+      icon: page.icon,
+      order: page.order + 1,
+      parentId: page.parentId,
+      content: {
+        blocks: page.content.blocks.map(block => ({
+          ...block,
+          id: 'block' + Date.now() + Math.random() // New unique IDs
+        }))
+      }
+    };
+
+    return this.http.post<Page>(`${this.apiUrl}/pages`, duplicatedPage).pipe(
+      tap(newPage => {
+        const currentPages = this.pagesSubject.value;
+        this.pagesSubject.next([...currentPages, newPage]);
+      }),
+      catchError(this.handleError)
+    );
+  }
+
+  reorderPages(pages: Page[]): Observable<Page[]> {
     const updates = pages.map((page, index) => {
-      return this.http.put(`${this.apiUrl}/pages/${page.id}`, {
-        ...page,
-        order: index
+      return this.http.patch<Page>(`${this.apiUrl}/pages/${page.id}`, {
+        order: index + 1
       }).toPromise();
     });
-    
+
     return new Observable(observer => {
-      Promise.all(updates).then(() => {
-        if (pages.length > 0) {
-          this.getPages(pages[0].documentId).subscribe();
-        }
-        observer.next();
+      Promise.all(updates).then(updatedPages => {
+        this.pagesSubject.next(updatedPages as Page[]);
+        observer.next(updatedPages as Page[]);
         observer.complete();
       }).catch(error => {
         observer.error(error);

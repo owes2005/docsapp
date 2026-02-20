@@ -1,77 +1,89 @@
 <div class="editor-container">
-  
+
   <mat-sidenav-container class="sidenav-container">
-    
+
     <mat-sidenav mode="side" opened class="page-sidenav">
-      
+
+      <!-- Sidenav Header -->
       <div class="sidenav-header">
-        <button mat-icon-button routerLink="/documents" matTooltip="Back to documents">
+        <button mat-icon-button (click)="backToDocuments()">
           <mat-icon>arrow_back</mat-icon>
         </button>
-        <h3>{{document?.icon}} {{document?.title}}</h3>
+        <h3>{{document?.title}}</h3>
       </div>
-      
+
+      <!-- Pages Section -->
       <div class="pages-section">
         <div class="pages-header">
-          <span>Pages ({{pages.length}})</span>
-          <button mat-icon-button 
-                  (click)="addNewPage()" 
-                  matTooltip="Add page"
-                  color="primary">
+          <span>Pages</span>
+          <button mat-icon-button (click)="addPage()">
             <mat-icon>add</mat-icon>
           </button>
         </div>
-        
-        <div cdkDropList 
-             class="pages-list"
+
+        <!-- Pages List -->
+        <div class="pages-list"
+             cdkDropList
              (cdkDropListDropped)="dropPage($event)">
-          
-          <div *ngFor="let page of pages"
+
+          <div class="page-item"
+               *ngFor="let page of pages"
                cdkDrag
-               class="page-item"
                [class.active]="selectedPage?.id === page.id"
                (click)="selectPage(page)">
-            
+
             <mat-icon cdkDragHandle class="drag-handle">drag_indicator</mat-icon>
-            
+
             <div class="page-info">
-              <span class="page-icon">{{page.icon || '📄'}}</span>
+              <span class="page-icon">{{page.icon}}</span>
               <span class="page-title">{{page.title}}</span>
             </div>
-            
-            <button mat-icon-button 
-                    [matMenuTriggerFor]="pageMenu"
+
+            <button mat-icon-button
                     class="page-menu-btn"
+                    [matMenuTriggerFor]="pageMenu"
                     (click)="$event.stopPropagation()">
               <mat-icon>more_vert</mat-icon>
             </button>
-            
+
             <mat-menu #pageMenu="matMenu">
-              <button mat-menu-item (click)="renamePage(page, $event)">
+              <button mat-menu-item (click)="startRename(page)">
                 <mat-icon>edit</mat-icon>
                 <span>Rename</span>
               </button>
-              <button mat-menu-item (click)="duplicatePage(page, $event)">
+              <button mat-menu-item (click)="duplicatePage(page)">
                 <mat-icon>content_copy</mat-icon>
                 <span>Duplicate</span>
               </button>
               <mat-divider></mat-divider>
-              <button mat-menu-item (click)="deletePage(page, $event)">
+              <button mat-menu-item (click)="deletePage(page.id)">
                 <mat-icon>delete</mat-icon>
                 <span>Delete</span>
               </button>
             </mat-menu>
+
+            <!-- Rename Input -->
+            <div class="rename-overlay" *ngIf="renamingPageId === page.id" (click)="$event.stopPropagation()">
+              <input
+                id="rename-input"
+                type="text"
+                [(ngModel)]="renamingPageTitle"
+                (blur)="saveRename(page)"
+                (keydown)="onRenameKeydown($event, page)">
+            </div>
+
           </div>
-          
+
         </div>
+
       </div>
-      
+
     </mat-sidenav>
 
     <mat-sidenav-content class="content">
       <app-block-editor *ngIf="selectedPage" [page]="selectedPage"></app-block-editor>
     </mat-sidenav-content>
-    
+
   </mat-sidenav-container>
-  
+
 </div>

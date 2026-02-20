@@ -1,11 +1,10 @@
 import { Component, OnInit } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
+import { CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-drop';
 import { DocumentService } from 'src/app/core/services/document.service';
 import { PageService } from 'src/app/core/services/page.service';
 import { Document } from 'src/app/core/models/document.model';
 import { Page } from 'src/app/core/models/page.model';
-import { HttpClient } from '@angular/common/http';
-import { CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-drop';
 
 @Component({
   selector: 'app-document-editor',
@@ -13,59 +12,63 @@ import { CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-drop';
   styleUrls: ['./document-editor.component.css']
 })
 export class DocumentEditorComponent implements OnInit {
-  documentId: string = '';
+
   document: Document | null = null;
   pages: Page[] = [];
   selectedPage: Page | null = null;
+  renamingPageId: string | null = null;
+  renamingPageTitle = '';
 
   constructor(
     private route: ActivatedRoute,
+    private router: Router,
     private documentService: DocumentService,
-    private pageService: PageService,
-    private http: HttpClient
+    private pageService: PageService
   ) {}
 
   ngOnInit(): void {
     this.route.params.subscribe(params => {
-      this.documentId = params['documentId'];
-      this.loadDocument();
-      this.loadPages();
+      const documentId = params['documentId'];
+      this.loadDocument(documentId);
+      this.loadPages(documentId);
     });
   }
 
-  loadDocument(): void {
-    this.documentService.getDocument(this.documentId).subscribe(doc => {
+  loadDocument(documentId: string): void {
+    this.documentService.getDocument(documentId).subscribe(doc => {
       this.document = doc;
     });
   }
 
-  loadPages(): void {
-    this.pageService.getPages(this.documentId).subscribe(pages => {
-      this.pages = pages;
-      if (pages.length > 0 && !this.selectedPage) {
-        this.selectedPage = pages[0];
+  loadPages(documentId: string): void {
+    this.pageService.getPagesByDocument(documentId).subscribe(pages => {
+      this.pages = pages.sort((a, b) => a.order - b.order);
+      if (this.pages.length > 0 && !this.selectedPage) {
+        this.selectPage(this.pages[0]);
       }
     });
   }
 
   selectPage(page: Page): void {
-    this.selectedPage = page;
+    // Deep clone to avoid reference issues
+    this.selectedPage = JSON.parse(JSON.stringify(page));
   }
 
-  addNewPage(): void {
+  addPage(): void {
+    if (!this.document) return;
+
     const newPage: Partial<Page> = {
       id: 'page' + Date.now(),
-      documentId: this.documentId,
-      title: 'Untitled page',
+      documentId: this.document.id,
+      title: 'Untitled',
       icon: '📄',
-      order: this.pages.length,
+      order: this.pages.length + 1,
       parentId: null,
       content: {
         blocks: [
           {
             id: 'block' + Date.now(),
-            type: 'heading',
-            level: 1,
+            type: 'text',
             content: '',
             order: 0
           }
@@ -74,44 +77,91 @@ export class DocumentEditorComponent implements OnInit {
     };
 
     this.pageService.createPage(newPage).subscribe(page => {
-      this.selectedPage = page;
+      this.pages.push(page);
+      this.pages.sort((a, b) => a.order - b.order);
+      this.selectPage(page);
     });
   }
 
-  duplicatePage(page: Page, event: Event): void {
-    event.stopPropagation();
-    if (confirm(`Duplicate "${page.title}"?`)) {
-      this.pageService.duplicatePage(page.id).subscribe();
-    }
-  }
-
-  deletePage(page: Page, event: Event): void {
-    event.stopPropagation();
-    
-    if (this.pages.length === 1) {
+  deletePage(pageId: string): void {
+    if (this.pages.length <= 0) {
       alert('Cannot delete the last page');
       return;
     }
 
-    if (confirm(`Delete "${page.title}"?`)) {
-      this.pageService.deletePage(page.id, this.documentId).subscribe(() => {
-        if (this.selectedPage?.id === page.id) {
-          this.selectedPage = this.pages[0];
+    if (confirm('Delete this page?')) {
+      this.pageService.deletePage(pageId).subscribe(() => {
+        this.pages = this.pages.filter(p => p.id !== pageId);
+        
+        // Select first page if deleted page was selected
+        if (this.selectedPage?.id === pageId && this.pages.length > 0) {
+          this.selectPage(this.pages[0]);
         }
       });
     }
   }
 
-  renamePage(page: Page, event: Event): void {
-    event.stopPropagation();
-    const newTitle = prompt('Enter new page title:', page.title);
-    if (newTitle && newTitle !== page.title) {
-      this.pageService.updatePage(page.id, { title: newTitle }).subscribe();
-    }
+  duplicatePage(page: Page): void {
+    this.pageService.duplicatePage(page).subscribe(newPage => {
+      this.pages.push(newPage);
+      this.pages.sort((a, b) => a.order - b.order);
+      this.selectPage(newPage);
+    });
   }
 
   dropPage(event: CdkDragDrop<Page[]>): void {
     moveItemInArray(this.pages, event.previousIndex, event.currentIndex);
     this.pageService.reorderPages(this.pages).subscribe();
+  }
+
+  startRename(page: Page): void {
+    this.renamingPageId = page.id;
+    this.renamingPageTitle = page.title;
+    setTimeout(() => {
+      const input = document.getElementById('rename-input');
+      if (input) {
+        (input as HTMLInputElement).focus();
+        (input as HTMLInputElement).select();
+      }
+    }, 100);
+  }
+
+  saveRename(page: Page): void {
+    if (this.renamingPageTitle.trim() && this.renamingPageTitle !== page.title) {
+      this.pageService.updatePage(page.id, {
+        title: this.renamingPageTitle.trim()
+      }).subscribe(updatedPage => {
+        const index = this.pages.findIndex(p => p.id === page.id);
+        if (index !== -1) {
+          this.pages[index] = updatedPage;
+        }
+        if (this.selectedPage?.id === page.id) {
+          this.selectedPage = updatedPage;
+        }
+      });
+    }
+    this.renamingPageId = null;
+    this.renamingPageTitle = '';
+  }
+
+  cancelRename(): void {
+    this.renamingPageId = null;
+    this.renamingPageTitle = '';
+  }
+
+  onRenameKeydown(event: KeyboardEvent, page: Page): void {
+    if (event.key === 'Enter') {
+      this.saveRename(page);
+    } else if (event.key === 'Escape') {
+      this.cancelRename();
+    }
+  }
+
+  backToDocuments(): void {
+    if (this.document?.projectId) {
+      this.router.navigate(['/project', this.document.projectId]);
+    } else {
+      this.router.navigate(['/documents']);
+    }
   }
 }

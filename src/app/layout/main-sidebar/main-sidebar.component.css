@@ -137,7 +137,7 @@
   height: 20px;
 }
 
-/* ===== CREATE DOC BUTTON ===== */
+/* ===== CREATE DOC ===== */
 .quick-actions {
   padding: 2px 12px 12px;
   flex-shrink: 0;
@@ -173,118 +173,327 @@
   height: 20px;
 }
 
-/* ===== NAVIGATION ===== */
+/* ===== NAV ===== */
 .sidebar-nav {
   flex: 1;
   overflow-y: auto;
   overflow-x: hidden;
-  padding: 8px 12px;
+  padding: 8px 0;
   min-height: 0;
 }
 
-/* ===== DIVIDER ===== */
-mat-divider {
-  margin: 8px 0 !important;
-  border-color: #f0f0f0 !important;
-}
-
-/* ===== NAV GROUP ===== */
-.nav-group {
-  margin-bottom: 4px;
-}
-
-.group-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 8px 8px 4px 8px;
-}
-
-.group-label {
+.nav-section-label {
   font-size: 10px;
   font-weight: 700;
   color: #9ca3af;
   text-transform: uppercase;
   letter-spacing: 0.8px;
+  padding: 4px 16px 8px 16px;
 }
 
-.view-all-link {
-  font-size: 11px;
-  color: #6b7280;
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 2px 6px;
-  border-radius: 4px;
-  transition: all 0.15s ease;
-  text-decoration: none;
+/* ===== PROJECT TREE ===== */
+.project-tree {
+  padding: 0;
 }
 
-.view-all-link:hover {
-  color: #111827;
-  background: #f3f4f6;
-}
-
-/* ===== NAV LINKS ===== */
-.nav-link {
-  width: 100%;
-  height: 36px;
-  padding: 0 10px;
+/* Project Row */
+.project-row {
   display: flex;
   align-items: center;
-  gap: 10px;
+  padding: 0 6px 0 4px;
+  height: 34px;
   border-radius: 8px;
-  font-size: 14px;
+  margin: 1px 6px;
+  transition: background 0.15s ease;
+  cursor: pointer;
+}
+
+.project-row:hover {
+  background: #f3f4f6;
+}
+
+.project-row:hover .tree-add-btn {
+  opacity: 1;
+}
+
+.project-row.active {
+  background: #eff6ff;
+}
+
+/* Chevron Button */
+.chevron-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border-radius: 4px;
+  color: #9ca3af;
+}
+
+.chevron-btn:hover {
+  background: #e5e7eb;
+  color: #374151;
+}
+
+.chevron-icon {
+  font-size: 16px;
+  width: 16px;
+  height: 16px;
+  transition: transform 0.2s ease;
+}
+
+.chevron-icon.open {
+  transform: rotate(90deg);
+}
+
+/* Project Label */
+.project-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+  padding: 0 4px;
+  cursor: pointer;
+}
+
+.project-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+
+.project-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: #111827;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.project-row.active .project-name {
+  color: #1d4ed8;
+}
+
+/* Tree Add Button */
+.tree-add-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  color: #9ca3af;
+  opacity: 0;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+  padding: 0;
+}
+
+.tree-add-btn:hover {
+  background: #e5e7eb;
+  color: #374151;
+  opacity: 1 !important;
+}
+
+.tree-add-btn mat-icon {
+  font-size: 15px;
+  width: 15px;
+  height: 15px;
+}
+
+/* Project Children */
+.project-children {
+  margin-left: 12px;
+  padding-left: 8px;
+  border-left: 1.5px solid #e5e7eb;
+  margin-right: 6px;
+}
+
+/* Folder Row */
+.folder-row {
+  display: flex;
+  align-items: center;
+  padding: 0 4px 0 0;
+  height: 30px;
+  border-radius: 6px;
+  margin: 1px 0;
+  transition: background 0.15s ease;
+  cursor: pointer;
+}
+
+.folder-row:hover {
+  background: #f3f4f6;
+}
+
+.folder-row:hover .tree-add-btn {
+  opacity: 1;
+}
+
+.folder-row.active {
+  background: #eff6ff;
+}
+
+/* Folder Label */
+.folder-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+  min-width: 0;
+  padding: 0 4px;
+  cursor: pointer;
+}
+
+.folder-icon {
+  font-size: 16px;
+  width: 16px;
+  height: 16px;
+  color: #f59e0b;
+  flex-shrink: 0;
+}
+
+.folder-name {
+  font-size: 13px;
   font-weight: 500;
   color: #374151;
-  text-decoration: none;
-  cursor: pointer;
-  margin-bottom: 2px;
-  transition: all 0.15s ease;
-  border: none;
-  background: none;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.nav-link:hover {
-  background: #f3f4f6;
-  color: #111827;
-}
-
-.nav-link.active {
-  background: #eff6ff;
+.folder-row.active .folder-name {
   color: #1d4ed8;
   font-weight: 600;
 }
 
-.nav-link.active mat-icon {
-  color: #1d4ed8;
+/* Folder Children */
+.folder-children {
+  margin-left: 12px;
+  padding-left: 8px;
+  border-left: 1.5px solid #e5e7eb;
 }
 
-.nav-link mat-icon {
-  font-size: 19px;
-  width: 19px;
-  height: 19px;
-  color: #6b7280;
-  flex-shrink: 0;
-  transition: color 0.15s ease;
+/* Document Row */
+.doc-row-tree {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 28px;
+  padding: 0 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+  margin: 1px 0;
 }
 
-.nav-link:hover mat-icon {
-  color: #374151;
-}
-
-/* ===== ADD LINK ===== */
-.add-link {
-  color: #6b7280;
-  font-weight: 400;
-}
-
-.add-link:hover {
-  color: #111827;
+.doc-row-tree:hover {
   background: #f3f4f6;
 }
 
-/* ===== SCROLLBAR ===== */
+.doc-row-tree.active {
+  background: #eff6ff;
+}
+
+.doc-emoji-tree {
+  font-size: 13px;
+  flex-shrink: 0;
+}
+
+.doc-name-tree {
+  font-size: 12px;
+  color: #374151;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+}
+
+.doc-row-tree.active .doc-name-tree {
+  color: #1d4ed8;
+  font-weight: 500;
+}
+
+/* Tree Input Row */
+.tree-input-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 6px;
+  background: white;
+  border: 1.5px solid #2563eb;
+  border-radius: 6px;
+  margin: 4px 0;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.08);
+}
+
+.tree-input-icon {
+  color: #2563eb;
+  font-size: 15px;
+  width: 15px;
+  height: 15px;
+  flex-shrink: 0;
+}
+
+.tree-input {
+  flex: 1;
+  border: none;
+  outline: none;
+  font-size: 12px;
+  font-weight: 500;
+  color: #111827;
+  background: transparent;
+  min-width: 0;
+}
+
+.tree-input::placeholder {
+  color: #9ca3af;
+}
+
+.tree-confirm-btn {
+  width: 20px;
+  height: 20px;
+  background: #2563eb;
+  color: white;
+  border: none;
+  border-radius: 3px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.tree-confirm-btn:hover {
+  background: #1d4ed8;
+}
+
+.tree-confirm-btn mat-icon {
+  font-size: 13px;
+  width: 13px;
+  height: 13px;
+}
+
+/* Tree Empty */
+.tree-empty {
+  padding: 4px 8px;
+  font-size: 11px;
+  color: #9ca3af;
+  font-style: italic;
+}
+
+/* Scrollbar */
 .sidebar-nav::-webkit-scrollbar {
   width: 4px;
 }
@@ -300,12 +509,4 @@ mat-divider {
 
 .sidebar-nav::-webkit-scrollbar-thumb:hover {
   background: #d1d5db;
-}
-/* Dashboard Section */
-.dashboard-section {
-  flex: 1;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  min-height: 0;
 }
