@@ -18,6 +18,7 @@ export class DocumentEditorComponent implements OnInit {
   selectedPage: Page | null = null;
   renamingPageId: string | null = null;
   renamingPageTitle = '';
+  sidebarOpen = true; // ADD THIS
 
   constructor(
     private route: ActivatedRoute,
@@ -50,7 +51,6 @@ export class DocumentEditorComponent implements OnInit {
   }
 
   selectPage(page: Page): void {
-    // Deep clone to avoid reference issues
     this.selectedPage = JSON.parse(JSON.stringify(page));
   }
 
@@ -84,7 +84,7 @@ export class DocumentEditorComponent implements OnInit {
   }
 
   deletePage(pageId: string): void {
-    if (this.pages.length <= 0) {
+    if (this.pages.length <= 1) {
       alert('Cannot delete the last page');
       return;
     }
@@ -93,7 +93,6 @@ export class DocumentEditorComponent implements OnInit {
       this.pageService.deletePage(pageId).subscribe(() => {
         this.pages = this.pages.filter(p => p.id !== pageId);
         
-        // Select first page if deleted page was selected
         if (this.selectedPage?.id === pageId && this.pages.length > 0) {
           this.selectPage(this.pages[0]);
         }
@@ -155,6 +154,10 @@ export class DocumentEditorComponent implements OnInit {
     } else if (event.key === 'Escape') {
       this.cancelRename();
     }
+  }
+
+  toggleSidebar(): void {
+    this.sidebarOpen = !this.sidebarOpen;
   }
 
   backToDocuments(): void {

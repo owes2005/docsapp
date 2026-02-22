@@ -2,7 +2,11 @@
 
   <mat-sidenav-container class="sidenav-container">
 
-    <mat-sidenav mode="side" opened class="page-sidenav">
+    <mat-sidenav 
+      mode="side" 
+      [opened]="sidebarOpen" 
+      class="page-sidenav"
+      [style.width.px]="sidebarOpen ? 280 : 0">
 
       <!-- Sidenav Header -->
       <div class="sidenav-header">
@@ -21,7 +25,6 @@
           </button>
         </div>
 
-        <!-- Pages List -->
         <div class="pages-list"
              cdkDropList
              (cdkDropListDropped)="dropPage($event)">
@@ -62,7 +65,6 @@
               </button>
             </mat-menu>
 
-            <!-- Rename Input -->
             <div class="rename-overlay" *ngIf="renamingPageId === page.id" (click)="$event.stopPropagation()">
               <input
                 id="rename-input"
@@ -81,7 +83,16 @@
     </mat-sidenav>
 
     <mat-sidenav-content class="content">
+      
+      <!-- Toggle Sidebar Button -->
+      <button class="sidebar-toggle-btn" 
+              (click)="toggleSidebar()"
+              [matTooltip]="sidebarOpen ? 'Close sidebar' : 'Open sidebar'">
+        <mat-icon>{{sidebarOpen ? 'chevron_left' : 'chevron_right'}}</mat-icon>
+      </button>
+
       <app-block-editor *ngIf="selectedPage" [page]="selectedPage"></app-block-editor>
+      
     </mat-sidenav-content>
 
   </mat-sidenav-container>

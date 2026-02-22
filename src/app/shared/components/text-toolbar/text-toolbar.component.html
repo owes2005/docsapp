@@ -1,7 +1,10 @@
 <div class="text-toolbar" 
      *ngIf="visible"
      [style.top.px]="position.top"
-     [style.left.px]="position.left">
+     [style.left.px]="position.left"
+     [class.below]="showBelow">
+
+  <div class="toolbar-arrow" *ngIf="showBelow"></div>
   
   <div class="toolbar-content">
     

@@ -1,31 +1,39 @@
 .app-shell {
+  --shell-bg: #f3f6fa;
+  --shell-ink: #0f172a;
+  --shell-subtle: #64748b;
+  --shell-border: #dbe3ee;
+  --shell-panel: #ffffff;
+  --shell-shadow: 0 16px 42px rgba(15, 23, 42, 0.09);
+  --shell-radius: 16px;
   display: flex;
   flex-direction: column;
   width: 100%;
   height: 100%;
   overflow: hidden;
-  background: #ffffff;
   position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  inset: 0;
+  background:
+    radial-gradient(780px 380px at 12% -10%, rgba(59, 130, 246, 0.16), transparent 70%),
+    radial-gradient(640px 420px at 100% 0%, rgba(14, 165, 233, 0.12), transparent 72%),
+    var(--shell-bg);
 }
 
-/* Top Toolbar */
 .doc-toolbar {
-  background: white;
-  color: #24292e;
-  border-bottom: 1px solid #e1e4e8;
-  height: 56px;
-  min-height: 56px;
-  padding: 0 16px;
-  box-shadow: none;
+  background: rgba(255, 255, 255, 0.86);
+  color: var(--shell-ink);
+  border-bottom: 1px solid var(--shell-border);
+  backdrop-filter: blur(8px);
+  height: 62px;
+  min-height: 62px;
+  padding: 0 18px;
+  box-shadow: 0 3px 14px rgba(15, 23, 42, 0.05);
   display: flex;
   justify-content: space-between;
   align-items: center;
   flex-shrink: 0;
   width: 100%;
+  z-index: 5;
 }
 
 .toolbar-left {
@@ -33,27 +41,39 @@
   align-items: center;
   gap: 12px;
   flex: 1;
+  min-width: 0;
 }
 
 .doc-breadcrumb {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 14px;
+  font-size: 13px;
+  min-width: 0;
 }
 
 .workspace-name {
-  color: #6a737d;
+  color: var(--shell-subtle);
+  max-width: 180px;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap;
 }
 
 .doc-breadcrumb mat-icon {
-  font-size: 18px;
-  color: #d1d5db;
+  font-size: 17px;
+  width: 17px;
+  height: 17px;
+  color: #b7c1cf;
 }
 
 .doc-name {
-  color: #24292e;
-  font-weight: 500;
+  color: var(--shell-ink);
+  font-weight: 600;
+  max-width: 300px;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap;
 }
 
 .toolbar-right {
@@ -63,10 +83,12 @@
 }
 
 .share-btn {
-  height: 36px;
+  height: 38px;
   padding: 0 16px;
-  font-weight: 600;
-  border-radius: 6px;
+  font-weight: 700;
+  border-radius: 10px;
+  letter-spacing: 0.1px;
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.18);
 }
 
 .share-btn mat-icon {
@@ -74,34 +96,40 @@
   font-size: 18px;
 }
 
-/* Main Layout */
 .main-layout {
   display: flex;
   flex: 1;
   overflow: hidden;
   width: 100%;
   position: relative;
+  padding: 14px;
+  gap: 14px;
 }
 
 .main-layout.no-toolbar {
   flex: 1;
+  padding-top: 14px;
 }
 
 .sidebar-container {
   display: flex;
-  width: 260px;
-  min-width: 260px;
-  max-width: 260px;
-  transition: width 200ms ease, min-width 200ms ease, max-width 200ms ease;
-  background: #ffffff;
-  overflow: visible;
+  width: 272px;
+  min-width: 272px;
+  max-width: 272px;
+  transition: width 220ms ease, min-width 220ms ease, max-width 220ms ease;
+  border: 1px solid var(--shell-border);
+  border-radius: var(--shell-radius);
+  background: linear-gradient(180deg, #ffffff 0%, #f9fbff 100%);
+  box-shadow: var(--shell-shadow);
+  overflow: hidden;
 }
 
 .sidebar-container.collapsed {
   width: 0;
   min-width: 0;
   max-width: 0;
-  border-right: 0;
+  border-width: 0;
+  margin-right: 0;
 }
 
 .sidebar-container.collapsed .main-sidebar {
@@ -115,11 +143,84 @@
   transition: opacity 150ms ease;
 }
 
-
 .content-area {
   flex: 1;
   overflow-y: auto;
   overflow-x: hidden;
-  background: #ffffff;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.96) 0%, rgba(250, 252, 255, 0.96) 100%),
+    var(--shell-panel);
+  border: 1px solid var(--shell-border);
+  border-radius: var(--shell-radius);
+  box-shadow: var(--shell-shadow);
   min-width: 0;
+}
+
+@media (max-width: 1100px) {
+  .workspace-name {
+    max-width: 130px;
+  }
+
+  .doc-name {
+    max-width: 180px;
+  }
+}
+
+@media (max-width: 860px) {
+  .main-layout {
+    padding: 10px;
+    gap: 10px;
+  }
+
+  .sidebar-container {
+    width: 240px;
+    min-width: 240px;
+    max-width: 240px;
+  }
+
+  .share-btn {
+    padding: 0 12px;
+  }
+}
+
+@media (max-width: 700px) {
+  .doc-toolbar {
+    height: 56px;
+    min-height: 56px;
+    padding: 0 10px;
+  }
+
+  .doc-breadcrumb {
+    font-size: 12px;
+    gap: 6px;
+  }
+
+  .workspace-name {
+    display: none;
+  }
+
+  .doc-name {
+    max-width: 130px;
+  }
+
+  .share-btn {
+    min-width: 0;
+    width: 38px;
+    padding: 0;
+  }
+
+  .share-btn mat-icon {
+    margin-right: 0;
+  }
+
+  .share-label {
+    display: none;
+  }
+
+  .sidebar-container {
+    width: 0;
+    min-width: 0;
+    max-width: 0;
+    border-width: 0;
+  }
 }
