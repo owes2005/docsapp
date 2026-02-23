@@ -6,10 +6,9 @@ import { Project, Folder, Document } from 'src/app/core/models/document.model';
 @Component({
   selector: 'app-project',
   templateUrl: './project.component.html',
-  styleUrls: ['./project.component.css']
+  styleUrls: ['./project.component.css'],
 })
 export class ProjectComponent implements OnInit {
-
   project: Project | null = null;
   folders: Folder[] = [];
   documents: Document[] = [];
@@ -26,49 +25,54 @@ export class ProjectComponent implements OnInit {
   constructor(
     private route: ActivatedRoute,
     private router: Router,
-    private documentService: DocumentService
+    private documentService: DocumentService,
   ) {}
 
- ngOnInit(): void {
-  this.route.params.subscribe(params => {
-    const projectId = params['projectId'];
-    this.loadProject(projectId);
-    this.loadFolders(projectId);
-    this.loadDocuments();
-  });
+  ngOnInit(): void {
+    this.route.params.subscribe((params) => {
+      const projectId = params['projectId'];
+      this.loadProject(projectId);
+      this.loadFolders(projectId);
+      this.loadDocuments(projectId); // Changed to filter by project
+    });
 
-  // Scroll to specific folder if folderId in query params
-  this.route.queryParams.subscribe(params => {
-    if (params['folderId']) {
-      this.activeFolderId = params['folderId'];
-      setTimeout(() => {
-        const el = document.getElementById('folder-' + params['folderId']);
-        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }, 300);
-    }
-  });
-}
+    // Scroll to specific folder if folderId in query params
+    this.route.queryParams.subscribe((params) => {
+      if (params['folderId']) {
+        this.activeFolderId = params['folderId'];
+        setTimeout(() => {
+          const el = document.getElementById('folder-' + params['folderId']);
+          if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 300);
+      }
+    });
+  }
 
   loadProject(projectId: string): void {
-    this.documentService.getProjects().subscribe(projects => {
-      this.project = projects.find(p => p.id === projectId) || null;
+    this.documentService.getProjects().subscribe((projects) => {
+      this.project = projects.find((p) => p.id === projectId) || null;
     });
   }
 
   loadFolders(projectId: string): void {
-    this.documentService.getFoldersByProject(projectId).subscribe(folders => {
+    this.documentService.getFoldersByProject(projectId).subscribe((folders) => {
       this.folders = folders;
     });
   }
 
-  loadDocuments(): void {
-    this.documentService.getDocuments().subscribe(docs => {
-      this.documents = docs;
+  loadDocuments(projectId: string): void {
+    this.documentService.getDocuments().subscribe((docs) => {
+      // Filter documents to only show those belonging to this project
+      this.documents = docs.filter((d) => d.projectId === projectId);
     });
   }
 
   getDocsForFolder(folderId: string): Document[] {
-    return this.documents.filter(d => d.folderId === folderId);
+    return this.documents.filter((d) => d.folderId === folderId);
+  }
+
+  getTotalDocumentsCount(): number {
+    return this.documents.length;
   }
 
   // ===== FOLDER ACTIONS =====
@@ -84,12 +88,11 @@ export class ProjectComponent implements OnInit {
 
   createFolder(): void {
     if (this.newFolderName.trim() && this.project) {
-      this.documentService.createFolder(
-        this.newFolderName.trim(),
-        this.project.id
-      ).subscribe(folder => {
-        this.folders.push(folder);
-      });
+      this.documentService
+        .createFolder(this.newFolderName.trim(), this.project.id)
+        .subscribe((folder) => {
+          this.folders.push(folder);
+        });
     }
     this.showNewFolderInput = false;
     this.newFolderName = '';
@@ -108,8 +111,8 @@ export class ProjectComponent implements OnInit {
   deleteFolder(folderId: string): void {
     if (confirm('Delete this folder and all its documents?')) {
       this.documentService.deleteFolder(folderId).subscribe(() => {
-        this.folders = this.folders.filter(f => f.id !== folderId);
-        this.documents = this.documents.filter(d => d.folderId !== folderId);
+        this.folders = this.folders.filter((f) => f.id !== folderId);
+        this.documents = this.documents.filter((d) => d.folderId !== folderId);
       });
     }
   }
@@ -137,9 +140,9 @@ export class ProjectComponent implements OnInit {
         isFavorite: false,
         isOwned: true,
         createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
+        updatedAt: new Date().toISOString(),
       };
-      this.documentService.createDocument(newDoc).subscribe(doc => {
+      this.documentService.createDocument(newDoc).subscribe((doc) => {
         this.documents.push(doc);
         this.router.navigate(['/document', doc.id]);
       });
@@ -165,7 +168,7 @@ export class ProjectComponent implements OnInit {
   deleteDocument(docId: string): void {
     if (confirm('Delete this document?')) {
       this.documentService.deleteDocument(docId).subscribe(() => {
-        this.documents = this.documents.filter(d => d.id !== docId);
+        this.documents = this.documents.filter((d) => d.id !== docId);
       });
     }
   }

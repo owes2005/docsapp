@@ -56,13 +56,13 @@
 
         <div class="section-header">
           <span class="section-label">Folders</span>
-          <button class="new-folder-btn" (click)="showCreateFolder()">
+          <!--<button class="new-folder-btn" (click)="showCreateFolder()">
             <mat-icon>create_new_folder</mat-icon>
             New folder
-          </button>
+          </button>-->
         </div>
 
-        <!-- New Folder Input -->
+        <!-- New Folder Input 
         <div class="new-folder-input-row" *ngIf="showNewFolderInput">
           <mat-icon class="folder-input-icon">folder</mat-icon>
           <input
@@ -78,7 +78,7 @@
           <button class="icon-btn cancel" (click)="cancelCreateFolder()" matTooltip="Cancel">
             <mat-icon>close</mat-icon>
           </button>
-        </div>
+        </div>-->
 
         <!-- Folders Grid -->
          <div class="folders-grid" *ngIf="(folders$ | async)?.length ?? 0 > 0">
@@ -104,10 +104,10 @@
           </div>
         </div>
 
-        <!-- No Folders -->
+        <!-- No Folders 
          <div class="empty-folders" *ngIf="((folders$ | async)?.length ?? 0) === 0 && !showNewFolderInput">
           <p>No folders yet. <button class="text-btn" (click)="showCreateFolder()">Create one</button></p>
-        </div>
+        </div>-->
 
       </div>
 
