@@ -34,6 +34,15 @@ interface PdfRenderContext {
   y: number;
 }
 
+interface PdfTextRun {
+  text: string;
+  bold: boolean;
+  italic: boolean;
+  underline: boolean;
+  color?: number[];
+  backgroundColor?: number[];
+}
+
 @Component({
   selector: 'app-shell',
   templateUrl: './app-shell.component.html',
@@ -131,22 +140,45 @@ export class AppShellComponent implements OnInit {
         }
 
         for (const block of blocks) {
-          const textContent = typeof block.content === 'string' ? block.content : '';
+          const rawContent = typeof block.content === 'string' ? block.content : '';
+          const textContent = this.htmlToPlainText(rawContent, block.type === 'code');
+          const hasHtmlFormatting = this.containsHtml(rawContent);
 
           switch (block.type) {
             case 'heading': {
               const level = block.level || 1;
               const headingText = textContent || 'Untitled heading';
-              this.renderHeading(context, headingText, level);
+              if (hasHtmlFormatting) {
+                this.renderRichText(context, rawContent, {
+                  size: level === 1 ? 20 : level === 2 ? 16 : 14,
+                  style: 'bold'
+                });
+              } else {
+                this.renderHeading(context, headingText, level);
+              }
               break;
             }
             case 'text':
-              this.renderParagraph(context, textContent || ' ');
+              if (hasHtmlFormatting) {
+                this.renderRichText(context, rawContent, {
+                  size: 12,
+                  style: 'normal'
+                });
+              } else {
+                this.renderParagraph(context, textContent || ' ');
+              }
               break;
             case 'quote':
-              this.renderParagraph(context, `"${textContent || ''}"`, {
-                style: 'italic'
-              });
+              if (hasHtmlFormatting) {
+                this.renderRichText(context, rawContent, {
+                  size: 12,
+                  style: 'italic'
+                });
+              } else {
+                this.renderParagraph(context, `"${textContent || ''}"`, {
+                  style: 'italic'
+                });
+              }
               break;
             case 'code':
               this.renderCodeBlock(context, textContent || ' ');
@@ -336,6 +368,141 @@ export class AppShellComponent implements OnInit {
     context.y += 6;
   }
 
+  private renderRichText(
+    context: PdfRenderContext,
+    html: string,
+    options?: {
+      size?: number;
+      style?: 'normal' | 'bold' | 'italic';
+      color?: number[];
+    }
+  ): void {
+    const runs = this.extractStyledRunsFromHtml(
+      html,
+      options?.style ?? 'normal',
+      options?.color ?? context.theme.textColor
+    );
+    if (runs.length === 0) {
+      this.renderParagraph(context, this.htmlToPlainText(html), options);
+      return;
+    }
+
+    const fontSize = options?.size ?? 12;
+    const lineHeight = fontSize === 10 ? 14 : 18;
+    const maxX = context.pageWidth - context.layout.marginRight;
+    let x = context.layout.marginLeft;
+    let drewAny = false;
+
+    this.ensureSpace(context, lineHeight + 6);
+
+    const startNewLine = (): void => {
+      context.y += lineHeight;
+      this.ensureSpace(context, lineHeight);
+      x = context.layout.marginLeft;
+    };
+
+    const drawSegment = (segment: string, run: PdfTextRun): void => {
+      const isWhitespace = /^\s+$/.test(segment);
+      const fontStyle: 'normal' | 'bold' | 'italic' | 'bolditalic' =
+        run.bold && run.italic ? 'bolditalic' :
+        run.bold ? 'bold' :
+        run.italic ? 'italic' :
+        'normal';
+
+      context.pdf.setFont(context.theme.fontFamily, fontStyle);
+      context.pdf.setFontSize(fontSize);
+      const width = context.pdf.getTextWidth(segment);
+
+      if (!isWhitespace && run.backgroundColor) {
+        this.setFillColor(context, run.backgroundColor);
+        context.pdf.rect(x, context.y - lineHeight + 4, width, lineHeight, 'F');
+      }
+
+      this.setTextColor(context, run.color || options?.color || context.theme.textColor);
+      context.pdf.text(segment, x, context.y);
+
+      if (!isWhitespace && run.underline) {
+        this.setStrokeColor(context, run.color || options?.color || context.theme.textColor);
+        context.pdf.setLineWidth(0.6);
+        context.pdf.line(x, context.y + 1, x + width, context.y + 1);
+      }
+
+      x += width;
+      drewAny = true;
+    };
+
+    for (const run of runs) {
+      const lines = run.text.split('\n');
+      for (let lineIndex = 0; lineIndex < lines.length; lineIndex++) {
+        const line = lines[lineIndex];
+        const parts = line.split(/(\s+)/).filter(part => part.length > 0);
+
+        for (const part of parts) {
+          const isWhitespace = /^\s+$/.test(part);
+          if (isWhitespace && x === context.layout.marginLeft) {
+            continue;
+          }
+
+          const styleForMeasure: 'normal' | 'bold' | 'italic' | 'bolditalic' =
+            run.bold && run.italic ? 'bolditalic' :
+            run.bold ? 'bold' :
+            run.italic ? 'italic' :
+            'normal';
+          context.pdf.setFont(context.theme.fontFamily, styleForMeasure);
+          context.pdf.setFontSize(fontSize);
+
+          if (isWhitespace) {
+            const width = context.pdf.getTextWidth(part);
+            if (x + width > maxX) {
+              startNewLine();
+            } else {
+              drawSegment(part, run);
+            }
+            continue;
+          }
+
+          let remaining = part;
+          while (remaining.length > 0) {
+            const availableWidth = maxX - x;
+            const fullWidth = context.pdf.getTextWidth(remaining);
+
+            if (fullWidth <= availableWidth) {
+              drawSegment(remaining, run);
+              remaining = '';
+              break;
+            }
+
+            // If we're not at line start, move the token to the next line first.
+            if (x > context.layout.marginLeft) {
+              startNewLine();
+              continue;
+            }
+
+            // Hard-wrap long unbroken tokens by character width.
+            const chunks = context.pdf.splitTextToSize(remaining, context.contentWidth);
+            const chunk = (chunks && chunks[0]) ? String(chunks[0]) : remaining.charAt(0);
+            drawSegment(chunk, run);
+            remaining = remaining.slice(chunk.length);
+
+            if (remaining.length > 0) {
+              startNewLine();
+            }
+          }
+        }
+
+        if (lineIndex < lines.length - 1) {
+          startNewLine();
+          drewAny = true;
+        }
+      }
+    }
+
+    if (drewAny) {
+      context.y += lineHeight + 6;
+    }
+    this.setTextColor(context, context.theme.textColor);
+  }
+
   private renderCodeBlock(context: PdfRenderContext, text: string): void {
     const fontSize = 10;
     const lineHeight = 13;
@@ -501,6 +668,214 @@ export class AppShellComponent implements OnInit {
       img.onerror = () => resolve(null);
       img.src = imageUrl;
     });
+  }
+
+  private htmlToPlainText(input: string, preserveLineBreaks = false): string {
+    if (!input) {
+      return '';
+    }
+
+    // Fast path for plain text values.
+    if (!/[<>&]/.test(input)) {
+      return input.trim();
+    }
+
+    const container = document.createElement('div');
+    container.innerHTML = input;
+
+    if (preserveLineBreaks) {
+      container.querySelectorAll('br').forEach((br) => br.replaceWith('\n'));
+      container.querySelectorAll('p,div,li,blockquote,h1,h2,h3,h4,h5,h6,pre').forEach((el) => {
+        if (el.nextSibling) {
+          el.parentNode?.insertBefore(document.createTextNode('\n'), el.nextSibling);
+        } else {
+          el.parentNode?.appendChild(document.createTextNode('\n'));
+        }
+      });
+    }
+
+    let text = container.textContent || '';
+    text = text.replace(/\u00a0/g, ' ');
+
+    if (preserveLineBreaks) {
+      return text
+        .replace(/\r/g, '')
+        .replace(/[ \t]+\n/g, '\n')
+        .replace(/\n{3,}/g, '\n\n')
+        .trim();
+    }
+
+    return text.replace(/\s+/g, ' ').trim();
+  }
+
+  private containsHtml(input: string): boolean {
+    return /<[^>]+>/.test(input || '');
+  }
+
+  private extractStyledRunsFromHtml(
+    html: string,
+    baseStyle: 'normal' | 'bold' | 'italic',
+    baseColor: number[]
+  ): PdfTextRun[] {
+    const container = document.createElement('div');
+    container.innerHTML = this.normalizeExportHtml(html);
+    const runs: PdfTextRun[] = [];
+
+    const walk = (node: Node, state: Omit<PdfTextRun, 'text'>): void => {
+      if (node.nodeType === Node.TEXT_NODE) {
+        const text = node.textContent || '';
+        if (text.length > 0) {
+          runs.push({ text, ...state });
+        }
+        return;
+      }
+
+      if (node.nodeType !== Node.ELEMENT_NODE) {
+        return;
+      }
+
+      const el = node as HTMLElement;
+      const tag = el.tagName.toLowerCase();
+      const next: Omit<PdfTextRun, 'text'> = {
+        ...state,
+        color: state.color ? [...state.color] : baseColor
+      };
+
+      if (tag === 'strong' || tag === 'b') next.bold = true;
+      if (tag === 'em' || tag === 'i') next.italic = true;
+      if (tag === 'u') next.underline = true;
+      if (tag === 'mark') {
+        next.backgroundColor = [254, 243, 205];
+      }
+      if (tag === 'br') {
+        runs.push({ text: '\n', ...next });
+        return;
+      }
+
+      if (tag === 'font') {
+        const fontColor = el.getAttribute('color');
+        if (fontColor) {
+          const parsedFontColor = this.parseCssColor(fontColor);
+          if (parsedFontColor) {
+            next.color = parsedFontColor;
+          }
+        }
+      }
+
+      const style = el.style;
+      if (style.color) {
+        const parsed = this.parseCssColor(style.color);
+        if (parsed) next.color = parsed;
+      }
+      if (style.backgroundColor) {
+        const parsedBg = this.parseCssColor(style.backgroundColor);
+        if (parsedBg) next.backgroundColor = parsedBg;
+      }
+      if (style.fontWeight) {
+        const fw = style.fontWeight.toLowerCase();
+        if (fw === 'bold' || Number(fw) >= 600) next.bold = true;
+      }
+      if (style.fontStyle && style.fontStyle.toLowerCase() === 'italic') {
+        next.italic = true;
+      }
+      if (
+        (style.textDecoration || '').toLowerCase().includes('underline') ||
+        (style.textDecorationLine || '').toLowerCase().includes('underline')
+      ) {
+        next.underline = true;
+      }
+
+      const dataBg = el.getAttribute('bgcolor');
+      if (dataBg) {
+        const parsedBg = this.parseCssColor(dataBg);
+        if (parsedBg) next.backgroundColor = parsedBg;
+      }
+
+      const isBlock = ['div', 'p', 'li', 'blockquote', 'pre', 'h1', 'h2', 'h3'].includes(tag);
+      if (isBlock && runs.length > 0 && !runs[runs.length - 1].text.endsWith('\n')) {
+        runs.push({ text: '\n', ...next });
+      }
+
+      el.childNodes.forEach((child) => walk(child, next));
+
+      if (isBlock && runs.length > 0 && !runs[runs.length - 1].text.endsWith('\n')) {
+        runs.push({ text: '\n', ...next });
+      }
+    };
+
+    const initial: Omit<PdfTextRun, 'text'> = {
+      bold: baseStyle === 'bold',
+      italic: baseStyle === 'italic',
+      underline: false,
+      color: baseColor
+    };
+    container.childNodes.forEach((child) => walk(child, initial));
+
+    return runs;
+  }
+
+  private parseCssColor(value: string): number[] | null {
+    const input = (value || '').trim().toLowerCase();
+    if (!input || input === 'transparent') {
+      return null;
+    }
+
+    const hex = input.match(/^#([0-9a-f]{3}|[0-9a-f]{6})$/i);
+    if (hex) {
+      const v = hex[1];
+      if (v.length === 3) {
+        return [
+          parseInt(v[0] + v[0], 16),
+          parseInt(v[1] + v[1], 16),
+          parseInt(v[2] + v[2], 16)
+        ];
+      }
+      return [
+        parseInt(v.slice(0, 2), 16),
+        parseInt(v.slice(2, 4), 16),
+        parseInt(v.slice(4, 6), 16)
+      ];
+    }
+
+    const rgb = input.match(/^rgba?\((\d+),\s*(\d+),\s*(\d+)/);
+    if (rgb) {
+      return [
+        Math.max(0, Math.min(255, Number(rgb[1]))),
+        Math.max(0, Math.min(255, Number(rgb[2]))),
+        Math.max(0, Math.min(255, Number(rgb[3])))
+      ];
+    }
+
+    // Named colors and browser-normalized CSS values fallback.
+    const probe = document.createElement('span');
+    probe.style.color = input;
+    if (probe.style.color) {
+      const normalized = probe.style.color.toLowerCase();
+      const normalizedRgb = normalized.match(/^rgba?\((\d+),\s*(\d+),\s*(\d+)/);
+      if (normalizedRgb) {
+        return [
+          Math.max(0, Math.min(255, Number(normalizedRgb[1]))),
+          Math.max(0, Math.min(255, Number(normalizedRgb[2]))),
+          Math.max(0, Math.min(255, Number(normalizedRgb[3])))
+        ];
+      }
+    }
+
+    return null;
+  }
+
+  private normalizeExportHtml(input: string): string {
+    if (!input) {
+      return '';
+    }
+
+    return input
+      // Remove contenteditable wrappers accidentally saved from editor nodes.
+      .replace(/<h[1-6][^>]*>/gi, '')
+      .replace(/<\/h[1-6]>/gi, '')
+      .replace(/<div[^>]*>/gi, '<div>')
+      .replace(/<p[^>]*>/gi, '<p>')
+      .replace(/<span[^>]*class="[^"]*ng-star-inserted[^"]*"[^>]*>/gi, '<span>');
   }
 
   private getSafeFilename(input: string): string {

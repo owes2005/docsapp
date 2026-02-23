@@ -128,6 +128,8 @@ export class BlockEditorComponent implements OnInit, OnChanges {
 
   updatePageTitle(event: any): void {
     const target = event.target as HTMLElement;
+    
+    // For title, we still use textContent (no formatting in title)
     this.pageTitle = target.textContent || '';
     this.savePage();
   }
@@ -153,7 +155,10 @@ export class BlockEditorComponent implements OnInit, OnChanges {
 
   updateBlock(blockId: string, event: any): void {
     const target = event.target as HTMLElement;
-    const content = target.textContent || '';
+    
+    // Get innerHTML instead of textContent to preserve formatting
+    const content = this.normalizeEditableHtml(target.innerHTML || '');
+    
     const block = this.blocks.find(b => b.id === blockId);
     if (block) {
       block.content = content;
@@ -486,5 +491,21 @@ export class BlockEditorComponent implements OnInit, OnChanges {
         }
       );
     }
+  }
+
+  private normalizeEditableHtml(html: string): string {
+    const normalized = html
+      .replace(/\u00a0/g, ' ')
+      .trim();
+
+    if (
+      normalized === '<br>' ||
+      normalized === '<div><br></div>' ||
+      normalized === '<p><br></p>'
+    ) {
+      return '';
+    }
+
+    return normalized;
   }
 }

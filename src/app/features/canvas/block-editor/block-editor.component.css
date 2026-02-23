@@ -162,9 +162,9 @@
 }
 
 /* Heading Block */
-.heading-block h1,
-.heading-block h2,
-.heading-block h3 {
+.block-heading-1,
+.block-heading-2,
+.block-heading-3 {
   margin: 0;
   padding: 4px 0;
   border: none;
@@ -173,30 +173,30 @@
   line-height: 1.3;
 }
 
-.heading-block h1 {
+.block-heading-1 {
   font-size: 36px;
   font-weight: 700;
 }
 
-.heading-block h2 {
+.block-heading-2 {
   font-size: 28px;
   font-weight: 700;
 }
 
-.heading-block h3 {
+.block-heading-3 {
   font-size: 22px;
   font-weight: 600;
 }
 
-.heading-block h1:empty:before,
-.heading-block h2:empty:before,
-.heading-block h3:empty:before {
-  content: attr(placeholder);
+.block-heading-1:empty::before,
+.block-heading-2:empty::before,
+.block-heading-3:empty::before {
+  content: attr(data-placeholder);
   color: #c0bfbc;
 }
 
 /* Text Block */
-.text-block p {
+.block-text {
   margin: 0;
   padding: 4px 0;
   font-size: 16px;
@@ -206,8 +206,8 @@
   outline: none;
 }
 
-.text-block p:empty:before {
-  content: attr(placeholder);
+.block-text:empty::before {
+  content: attr(data-placeholder);
   color: #c0bfbc;
 }
 
@@ -461,7 +461,7 @@
 }
 
 /* Code Block */
-.code-block pre {
+.block-code {
   background: #f7f7f5;
   border: 1px solid #e8e7e5;
   border-radius: 4px;
@@ -471,25 +471,38 @@
   color: #37352f;
   overflow-x: auto;
   margin: 0;
+  outline: none;
 }
 
-.code-block pre:empty:before {
-  content: attr(placeholder);
+.block-code:empty::before {
+  content: attr(data-placeholder);
   color: #c0bfbc;
 }
 
 /* Quote Block */
-.quote-block blockquote {
+.block-quote {
   border-left: 4px solid #e8e7e5;
   padding-left: 16px;
   margin: 8px 0;
   font-size: 18px;
   font-style: italic;
   color: #787774;
+  outline: none;
 }
 
-.quote-block blockquote:empty:before {
-  content: attr(placeholder);
+.block-quote:empty::before {
+  content: attr(data-placeholder);
+  color: #c0bfbc;
+}
+
+/* Also show placeholders when contenteditable keeps a single <br> */
+.block-heading-1:not(:focus):has(> br:only-child)::before,
+.block-heading-2:not(:focus):has(> br:only-child)::before,
+.block-heading-3:not(:focus):has(> br:only-child)::before,
+.block-text:not(:focus):has(> br:only-child)::before,
+.block-code:not(:focus):has(> br:only-child)::before,
+.block-quote:not(:focus):has(> br:only-child)::before {
+  content: attr(data-placeholder);
   color: #c0bfbc;
 }
 

@@ -47,42 +47,49 @@
       <div class="block-content">
         
         <!-- Heading Block -->
-        <div *ngIf="block.type === 'heading'" class="heading-block">
-          <h1 *ngIf="block.level === 1" 
-              contenteditable="true"
-              [attr.data-block-id]="block.id"
-              (blur)="updateBlock(block.id, $event)"
-              (keydown)="onKeyDown($event, block.id)"
-              [textContent]="block.content"
-              placeholder="Heading 1">
-          </h1>
-          <h2 *ngIf="block.level === 2"
-              contenteditable="true"
-              [attr.data-block-id]="block.id"
-              (blur)="updateBlock(block.id, $event)"
-              (keydown)="onKeyDown($event, block.id)"
-              [textContent]="block.content"
-              placeholder="Heading 2">
-          </h2>
-          <h3 *ngIf="block.level === 3"
-              contenteditable="true"
-              [attr.data-block-id]="block.id"
-              (blur)="updateBlock(block.id, $event)"
-              (keydown)="onKeyDown($event, block.id)"
-              [textContent]="block.content"
-              placeholder="Heading 3">
-          </h3>
-        </div>
+        <h1 *ngIf="block.type === 'heading' && block.level === 1"
+            class="block-heading-1"
+            contenteditable="true"
+            [attr.data-block-id]="block.id"
+            [innerHTML]="block.content"
+            (blur)="updateBlock(block.id, $event)"
+            (keydown)="onKeyDown($event, block.id)"
+            (keyup)="handleKeyboardShortcut($event)"
+            data-placeholder="Heading 1">
+        </h1>
+
+        <h2 *ngIf="block.type === 'heading' && block.level === 2"
+            class="block-heading-2"
+            contenteditable="true"
+            [attr.data-block-id]="block.id"
+            [innerHTML]="block.content"
+            (blur)="updateBlock(block.id, $event)"
+            (keydown)="onKeyDown($event, block.id)"
+            (keyup)="handleKeyboardShortcut($event)"
+            data-placeholder="Heading 2">
+        </h2>
+
+        <h3 *ngIf="block.type === 'heading' && block.level === 3"
+            class="block-heading-3"
+            contenteditable="true"
+            [attr.data-block-id]="block.id"
+            [innerHTML]="block.content"
+            (blur)="updateBlock(block.id, $event)"
+            (keydown)="onKeyDown($event, block.id)"
+            (keyup)="handleKeyboardShortcut($event)"
+            data-placeholder="Heading 3">
+        </h3>
 
         <!-- Text Block -->
-        <div *ngIf="block.type === 'text'" class="text-block">
-          <p contenteditable="true"
+        <div *ngIf="block.type === 'text'"
+             class="block-text"
+             contenteditable="true"
              [attr.data-block-id]="block.id"
+             [innerHTML]="block.content"
              (blur)="updateBlock(block.id, $event)"
              (keydown)="onKeyDown($event, block.id)"
-             [textContent]="block.content"
-             placeholder="Start typing or insert using  /">
-          </p>
+             (keyup)="handleKeyboardShortcut($event)"
+             data-placeholder="Type / for commands...">
         </div>
 
         <!-- Image Block -->
@@ -199,21 +206,26 @@
         </div>
 
         <!-- Code Block -->
-        <div *ngIf="block.type === 'code'" class="code-block">
-          <pre contenteditable="true"
-               (blur)="updateBlock(block.id, $event)"
-               [textContent]="block.content"
-               placeholder="// Code here"></pre>
-        </div>
+        <pre *ngIf="block.type === 'code'"
+             class="block-code"
+             contenteditable="true"
+             [attr.data-block-id]="block.id"
+             [innerHTML]="block.content"
+             (blur)="updateBlock(block.id, $event)"
+             (keydown)="onKeyDown($event, block.id)"
+             data-placeholder="Code...">
+        </pre>
 
         <!-- Quote Block -->
-        <div *ngIf="block.type === 'quote'" class="quote-block">
-          <blockquote contenteditable="true"
-                      (blur)="updateBlock(block.id, $event)"
-                      [textContent]="block.content"
-                      placeholder="Quote...">
-          </blockquote>
-        </div>
+        <blockquote *ngIf="block.type === 'quote'"
+                    class="block-quote"
+                    contenteditable="true"
+                    [attr.data-block-id]="block.id"
+                    [innerHTML]="block.content"
+                    (blur)="updateBlock(block.id, $event)"
+                    (keydown)="onKeyDown($event, block.id)"
+                    data-placeholder="Quote...">
+        </blockquote>
 
       </div>
 

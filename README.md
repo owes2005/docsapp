@@ -25,3 +25,40 @@ Run `ng e2e` to execute the end-to-end tests via a platform of your choice. To u
 ## Further help
 
 To get more help on the Angular CLI use `ng help` or go check out the [Angular CLI Overview and Command Reference](https://angular.io/cli) page.
+
+## Backend Integration Note: Block Content Stores HTML
+
+The `content` field in page blocks stores HTML markup, not plain text.
+
+Example:
+
+```json
+{
+  "id": "block1",
+  "type": "text",
+  "content": "This is <strong>bold</strong>, <em>italic</em>, and <u>underlined</u> text.",
+  "order": 0
+}
+```
+
+Common tags you may receive:
+
+- `<strong>` for bold
+- `<em>` for italic
+- `<u>` for underline
+- `<s>` for strikethrough
+- `<a href=\"...\">` for links
+- `<span style=\"color: ...\">` for text color
+- `<span style=\"background-color: ...\">` for highlight
+- `<code>` for inline code
+
+Storage guidance:
+
+- SQL: store as `TEXT` / `VARCHAR`
+- MongoDB: store as `string`
+- Recommended max size: ~100KB per block
+
+Security:
+
+- Frontend rendering already goes through Angular sanitization on `[innerHTML]`.
+- Backend can store the HTML string payload as-is.
