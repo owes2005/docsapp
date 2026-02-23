@@ -111,6 +111,18 @@
   transform: translateY(-1px);
 }
 
+.action-btn.secondary {
+  background: #ffffff;
+  color: #374151;
+  border: 1.5px solid #d1d5db;
+}
+
+.action-btn.secondary:hover {
+  background: #f9fafb;
+  border-color: #9ca3af;
+  color: #111827;
+}
+
 .action-btn mat-icon {
   font-size: 18px;
   width: 18px;

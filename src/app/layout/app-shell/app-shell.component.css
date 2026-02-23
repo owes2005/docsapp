@@ -82,6 +82,38 @@
   gap: 8px;
 }
 
+.action-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 38px;
+  padding: 0 16px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  transition: all 0.15s ease;
+}
+
+.action-btn.secondary {
+  background: #ffffff;
+  color: #334155;
+  border: 1.5px solid #d1d5db;
+}
+
+.action-btn.secondary:hover {
+  background: #f8fafc;
+  border-color: #9ca3af;
+  color: #111827;
+}
+
+.action-btn mat-icon {
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
+}
+
 .share-btn {
   height: 38px;
   padding: 0 16px;
@@ -181,6 +213,10 @@
   .share-btn {
     padding: 0 12px;
   }
+
+  .action-btn {
+    padding: 0 12px;
+  }
 }
 
 @media (max-width: 700px) {
@@ -214,6 +250,17 @@
   }
 
   .share-label {
+    display: none;
+  }
+
+  .action-btn {
+    min-width: 0;
+    width: 38px;
+    padding: 0;
+    justify-content: center;
+  }
+
+  .export-label {
     display: none;
   }
 

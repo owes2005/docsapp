@@ -20,21 +20,11 @@
         <mat-icon>share</mat-icon>
         <span class="share-label">Share</span>
       </button>
-      
-     
-      <button mat-icon-button [matMenuTriggerFor]="moreMenu">
-        <mat-icon>more_vert</mat-icon>
+
+      <button class="action-btn secondary" (click)="exportDocumentPdf()">
+        <mat-icon>download</mat-icon>
+        <span class="export-label">Export</span>
       </button>
-      
-      <mat-menu #moreMenu="matMenu">
-       
-        <button mat-menu-item (click)="exportDocumentPdf()">
-          <mat-icon>download</mat-icon>
-          <span>Export</span>
-        </button>
-        
-        
-      </mat-menu>
     </div>
     
   </mat-toolbar>

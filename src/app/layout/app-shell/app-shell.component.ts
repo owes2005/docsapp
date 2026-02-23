@@ -28,6 +28,7 @@ interface PdfRenderContext {
   theme: PdfTheme;
   layout: PdfLayout;
   docTitle: string;
+  exportedAt: string;
   pageWidth: number;
   pageHeight: number;
   contentWidth: number;
@@ -100,19 +101,21 @@ export class AppShellComponent implements OnInit {
 
       const pdf = new jsPDF({ unit: 'pt', format: 'a4' });
       const theme = this.applyTheme();
+      const exportedAt = new Date().toLocaleString();
       const layout: PdfLayout = {
-        marginLeft: 48,
-        marginRight: 48,
-        marginBottom: 44,
-        headerHeight: 64,
-        footerHeight: 34,
-        sectionGap: 12
+        marginLeft: 50,
+        marginRight: 50,
+        marginBottom: 54,
+        headerHeight: 62,
+        footerHeight: 20,
+        sectionGap: 20
       };
       const context: PdfRenderContext = {
         pdf,
         theme,
         layout,
         docTitle: this.currentDocTitle || 'Untitled',
+        exportedAt,
         pageWidth: pdf.internal.pageSize.getWidth(),
         pageHeight: pdf.internal.pageSize.getHeight(),
         contentWidth: pdf.internal.pageSize.getWidth() - layout.marginLeft - layout.marginRight,
@@ -120,6 +123,26 @@ export class AppShellComponent implements OnInit {
       };
 
       this.addHeader(context);
+      const totalBlockCount = sortedPages.reduce((sum, page) => {
+        const blocks = page.content?.blocks || [];
+        return sum + blocks.length;
+      }, 0);
+      this.renderHeading(context, context.docTitle || 'Untitled', 1);
+      this.renderParagraph(
+        context,
+        `Pages ${sortedPages.length} | Blocks ${totalBlockCount} | Exported ${exportedAt}`,
+        { size: 10, style: 'normal', color: context.theme.mutedColor }
+      );
+      this.setStrokeColor(context, context.theme.mutedColor);
+      context.pdf.setLineWidth(0.8);
+      this.ensureSpace(context, 16);
+      context.pdf.line(
+        context.layout.marginLeft,
+        context.y + 4,
+        context.pageWidth - context.layout.marginRight,
+        context.y + 4
+      );
+      context.y += 22;
 
       for (let pageIndex = 0; pageIndex < sortedPages.length; pageIndex++) {
         const page = sortedPages[pageIndex];
@@ -127,7 +150,7 @@ export class AppShellComponent implements OnInit {
           this.startNewPage(context);
         }
 
-        this.renderHeading(context, `${pageIndex + 1}. ${page.title || 'Untitled page'}`, 2);
+        this.renderHeading(context, `Page ${pageIndex + 1}: ${page.title || 'Untitled page'}`, 2);
 
         const blocks = [...(page.content?.blocks || [])].sort((a, b) => a.order - b.order);
         if (blocks.length === 0) {
@@ -289,12 +312,11 @@ export class AppShellComponent implements OnInit {
   }
 
   private addHeader(context: PdfRenderContext): void {
-    const { pdf, layout, pageWidth, docTitle } = context;
-    const headerCenterY = 30;
+    const { pdf, layout, pageWidth, exportedAt } = context;
 
     if (this.pdfLogoBase64) {
       try {
-        pdf.addImage(this.pdfLogoBase64, 'PNG', layout.marginLeft, 16, 18, 18);
+        pdf.addImage(this.pdfLogoBase64, 'PNG', layout.marginLeft, 20, 16, 16);
       } catch {
         // Ignore logo failures and continue export.
       }
@@ -303,13 +325,18 @@ export class AppShellComponent implements OnInit {
     this.setTextColor(context, context.theme.primaryColor);
     pdf.setFont(context.theme.fontFamily, 'bold');
     pdf.setFontSize(11);
-    pdf.text(docTitle, pageWidth / 2, headerCenterY, { align: 'center' });
+    pdf.text('DocsApp Export', layout.marginLeft + (this.pdfLogoBase64 ? 22 : 0), 32);
+
+    this.setTextColor(context, context.theme.mutedColor);
+    pdf.setFont(context.theme.fontFamily, 'normal');
+    pdf.setFontSize(9);
+    pdf.text(exportedAt, pageWidth - layout.marginRight, 32, { align: 'right' });
 
     this.setStrokeColor(context, context.theme.mutedColor);
-    pdf.setLineWidth(0.6);
-    pdf.line(layout.marginLeft, layout.headerHeight - 4, pageWidth - layout.marginRight, layout.headerHeight - 4);
+    pdf.setLineWidth(0.8);
+    pdf.line(layout.marginLeft, layout.headerHeight - 10, pageWidth - layout.marginRight, layout.headerHeight - 10);
 
-    context.y = layout.headerHeight + 20;
+    context.y = layout.headerHeight + 26;
   }
 
   private renderHeading(context: PdfRenderContext, text: string, level: number): void {
@@ -568,14 +595,14 @@ export class AppShellComponent implements OnInit {
     for (let page = 1; page <= totalPages; page++) {
       context.pdf.setPage(page);
 
-      const footerY = context.pageHeight - context.layout.footerHeight + 8;
+      const footerY = context.pageHeight - context.layout.marginBottom + 16;
       this.setStrokeColor(context, context.theme.mutedColor);
-      context.pdf.setLineWidth(0.5);
+      context.pdf.setLineWidth(0.7);
       context.pdf.line(
         context.layout.marginLeft,
-        context.pageHeight - context.layout.footerHeight - 8,
+        context.pageHeight - context.layout.marginBottom,
         context.pageWidth - context.layout.marginRight,
-        context.pageHeight - context.layout.footerHeight - 8
+        context.pageHeight - context.layout.marginBottom
       );
 
       context.pdf.setFont(context.theme.fontFamily, 'normal');
