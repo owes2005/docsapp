@@ -81,33 +81,42 @@
         </div>-->
 
         <!-- Folders Grid -->
-         <div class="folders-grid" *ngIf="(folders$ | async)?.length ?? 0 > 0">
-          <div class="folder-card" *ngFor="let folder of folders$ | async">
-            <div class="folder-card-icon">
-              <mat-icon>folder</mat-icon>
-            </div>
-            <div class="folder-card-info">
-              <span class="folder-card-name">{{folder.name}}</span>
-              <span class="folder-card-meta">Folder</span>
-            </div>
-            <button class="folder-more-btn"
-                    [matMenuTriggerFor]="folderMenu"
-                    (click)="$event.stopPropagation()">
-              <mat-icon>more_horiz</mat-icon>
-            </button>
-            <mat-menu #folderMenu="matMenu">
-              <button mat-menu-item (click)="deleteFolder($event, folder.id)">
-                <mat-icon>delete_outline</mat-icon>
-                <span>Delete folder</span>
-              </button>
-            </mat-menu>
-          </div>
-        </div>
+        <ng-container *ngIf="folders$ | async as folderList">
 
-        <!-- No Folders 
-         <div class="empty-folders" *ngIf="((folders$ | async)?.length ?? 0) === 0 && !showNewFolderInput">
-          <p>No folders yet. <button class="text-btn" (click)="showCreateFolder()">Create one</button></p>
-        </div>-->
+          <div class="folders-grid" *ngIf="folderList.length > 0">
+            <div class="folder-card"
+                 *ngFor="let folder of folderList"
+                 (click)="openFolder(folder)">
+              <div class="folder-card-icon">
+                <mat-icon>folder</mat-icon>
+              </div>
+
+              <div class="folder-card-info">
+                <span class="folder-card-name">{{folder.name}}</span>
+                <span class="folder-card-meta">Folder</span>
+              </div>
+
+              <button class="folder-more-btn"
+                      [matMenuTriggerFor]="folderMenu"
+                      (click)="$event.stopPropagation()">
+                <mat-icon>more_horiz</mat-icon>
+              </button>
+
+              <mat-menu #folderMenu="matMenu">
+                <button mat-menu-item (click)="deleteFolder($event, folder.id)">
+                  <mat-icon>delete_outline</mat-icon>
+                  <span>Delete folder</span>
+                </button>
+              </mat-menu>
+            </div>
+          </div>
+
+          <!-- Empty Folders -->
+          <div class="empty-folders" *ngIf="folderList.length === 0 && !showNewFolderInput">
+            <p>No folders yet. <button class="text-btn" (click)="showCreateFolder()">Create one</button></p>
+          </div>
+
+        </ng-container>
 
       </div>
 

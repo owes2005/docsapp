@@ -1,10 +1,9 @@
 import { Component, OnInit } from '@angular/core';
-import { Router } from '@angular/router';
+import { Router, ActivatedRoute } from '@angular/router';
 import { DocumentService } from 'src/app/core/services/document.service';
 import { Document, Folder } from 'src/app/core/models/document.model';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
-import { ActivatedRoute } from '@angular/router';
 
 @Component({
   selector: 'app-document-list',
@@ -93,6 +92,7 @@ export class DocumentListComponent implements OnInit {
     this.searchQuery = '';
     this.applyFilter();
   }
+  
 
   // ===== DOCUMENT ACTIONS =====
 
@@ -202,6 +202,13 @@ deleteDocument(event: Event, id: string): void {
     } else if (event.key === 'Escape') {
       this.cancelCreateFolder();
     }
+  }
+
+  openFolder(folder: Folder): void {
+    // Navigate to the project page with the folder highlighted
+    this.router.navigate(['/project', folder.projectId], {
+      queryParams: { folderId: folder.id }
+    });
   }
 
   deleteFolder(event: Event, id: string): void {

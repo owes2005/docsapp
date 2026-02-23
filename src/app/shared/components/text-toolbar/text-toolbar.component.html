@@ -1,38 +1,35 @@
-<div class="text-toolbar" 
-     *ngIf="visible"
-     [style.top.px]="position.top"
-     [style.left.px]="position.left"
-     [class.below]="showBelow">
-
+<div
+  class="text-toolbar"
+  *ngIf="visible"
+  [style.top.px]="position.top"
+  [style.left.px]="position.left"
+  [class.below]="showBelow"
+>
   <div class="toolbar-arrow" *ngIf="showBelow"></div>
-  
+
   <div class="toolbar-content">
-    
-    <button (mousedown)="$event.preventDefault(); execCommand('bold')" 
-            matTooltip="Bold (⌘B)">
+    <button (mousedown)="$event.preventDefault(); execCommand('bold')">
       <mat-icon>format_bold</mat-icon>
     </button>
-    
-    <button (mousedown)="$event.preventDefault(); execCommand('italic')" 
-            matTooltip="Italic (⌘I)">
+
+    <button (mousedown)="$event.preventDefault(); execCommand('italic')">
       <mat-icon>format_italic</mat-icon>
     </button>
-    
-    <button (mousedown)="$event.preventDefault(); execCommand('underline')" 
-            matTooltip="Underline (⌘U)">
+
+    <button (mousedown)="$event.preventDefault(); execCommand('underline')">
       <mat-icon>format_underlined</mat-icon>
     </button>
-    
-   
-    
+
     <mat-divider [vertical]="true"></mat-divider>
-    
-    <button [matMenuTriggerFor]="colorMenu"
-            (mousedown)="$event.preventDefault()"
-            matTooltip="Text color">
+
+    <button
+      [matMenuTriggerFor]="colorMenu"
+      (mousedown)="$event.preventDefault()"
+      matTooltip="Text color"
+    >
       <mat-icon>format_color_text</mat-icon>
     </button>
-    
+
     <mat-menu #colorMenu="matMenu" class="text-toolbar-menu">
       <button mat-menu-item (click)="changeColor('#000000')">
         <span class="color-preview" style="background: #000000"></span>
@@ -59,16 +56,21 @@
         Orange
       </button>
     </mat-menu>
-    
-    <button [matMenuTriggerFor]="bgMenu"
-            (mousedown)="$event.preventDefault()"
-            matTooltip="Highlight">
+
+    <button
+      [matMenuTriggerFor]="bgMenu"
+      (mousedown)="$event.preventDefault()"
+      matTooltip="Highlight"
+    >
       <mat-icon>format_color_fill</mat-icon>
     </button>
-    
+
     <mat-menu #bgMenu="matMenu" class="text-toolbar-menu">
       <button mat-menu-item (click)="changeBackground('transparent')">
-        <span class="color-preview" style="background: white; border: 1px solid #ddd"></span>
+        <span
+          class="color-preview"
+          style="background: white; border: 1px solid #ddd"
+        ></span>
         None
       </button>
       <button mat-menu-item (click)="changeBackground('#fef3cd')">
@@ -88,15 +90,14 @@
         Green
       </button>
     </mat-menu>
-    
 
     <mat-divider [vertical]="true"></mat-divider>
-    
-    <button (mousedown)="$event.preventDefault(); execCommand('formatBlock', 'pre')" 
-            matTooltip="Inline code">
+
+    <button
+      (mousedown)="$event.preventDefault(); execCommand('formatBlock', 'pre')"
+      matTooltip="Inline code"
+    >
       <mat-icon>code</mat-icon>
     </button>
-    
   </div>
-  
 </div>
