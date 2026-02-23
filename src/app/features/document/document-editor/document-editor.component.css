@@ -200,8 +200,8 @@
 
 /* Sidebar Toggle Button */
 .sidebar-toggle-btn {
-  position: absolute;
-  left: 20px;
+  position: sticky;
+  left: 0;
   top: 20px;
   width: 32px;
   height: 32px;
@@ -216,6 +216,7 @@
   z-index: 50;
   transition: all 0.15s ease;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  margin-left: 20px;
 }
 
 .sidebar-toggle-btn:hover {

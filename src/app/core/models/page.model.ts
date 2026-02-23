@@ -20,8 +20,6 @@ export interface ContentBlock {
   level?: number;
   imageUrl?: string;
   imageCaption?: string;
-  buttonLabel?: string;
-  buttonActions?: any[];
   formatting?: TextFormatting;
 }
 
