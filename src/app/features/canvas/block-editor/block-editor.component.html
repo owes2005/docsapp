@@ -20,7 +20,7 @@
   </div>
 
   <mat-menu #insertMenu="matMenu" class="insert-dropdown">
-    <button mat-menu-item *ngFor="let blockType of blockTypes" (click)="addBlock($any(blockType.type))">
+    <button mat-menu-item *ngFor="let blockType of blockTypes" (click)="addBlock($any(blockType.type), blockType.level)">
       <mat-icon>{{blockType.icon}}</mat-icon>
       <span>{{blockType.label}}</span>
     </button>

@@ -132,7 +132,8 @@ export class BlockEditorComponent implements OnInit, OnChanges {
     this.savePage();
   }
 
-  addBlock(type: BlockType | string): void {
+  addBlock(type: BlockType | string, ...args: Array<number | undefined>): void {
+    const level = args[0];
     const newBlock: ContentBlock = {
       id: 'block' + Date.now(),
       type: type as BlockType,
@@ -141,7 +142,7 @@ export class BlockEditorComponent implements OnInit, OnChanges {
     };
 
     if (type === 'heading') {
-      newBlock.level = 1;
+      newBlock.level = level ?? 1;
     }
 
     this.blocks.push(newBlock);

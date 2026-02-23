@@ -196,15 +196,6 @@ export class AppShellComponent implements OnInit {
               }
               break;
             }
-            case 'list':
-              writeWrappedText(`- ${textContent || ''}`, 11, 16, 'normal');
-              break;
-            case 'checkbox':
-              writeWrappedText(`[ ] ${textContent || ''}`, 11, 16, 'normal');
-              break;
-            case 'button':
-              writeWrappedText(`[Button] ${block.buttonLabel || textContent || ''}`, 11, 16, 'normal');
-              break;
             default:
               writeWrappedText(textContent || ' ', 11, 16, 'normal');
               break;

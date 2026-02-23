@@ -30,12 +30,9 @@ export type BlockType =
   | 'text' 
   | 'image'
   | 'gallery'
-  | 'button'
   | 'divider'
   | 'code'
-  | 'quote'
-  | 'list'
-  | 'checkbox';
+  | 'quote';
 
 export interface TextFormatting {
   bold?: boolean;
@@ -43,5 +40,4 @@ export interface TextFormatting {
   underline?: boolean;
   color?: string;
   backgroundColor?: string;
-  align?: 'left' | 'center' | 'right';
 }
