@@ -252,6 +252,9 @@ export class ProjectComponent implements OnInit {
     documentsWithPages: Array<Document & { pages: Page[] }>
   ): Promise<void> {
     const pdf = new jsPDF({ unit: 'pt', format: 'a4' });
+    const coverImagePath = encodeURI('assets/Optima User Manual page.jpg');
+    const leftHeaderLogoPath = encodeURI('assets/OPTIMANEW.svg');
+    const rightHeaderLogoPath = encodeURI('assets/KELLTON2.svg');
     const theme: ProjectPdfTheme = {
       brand: [24, 56, 97],
       text: [24, 28, 33],
@@ -282,18 +285,54 @@ export class ProjectComponent implements OnInit {
       pdf.setFillColor(color[0], color[1], color[2]);
     };
 
-    const exportDate = new Date().toLocaleString();
+    const [leftHeaderLogo, rightHeaderLogo] = await Promise.all([
+      this.loadImageForPdf(leftHeaderLogoPath),
+      this.loadImageForPdf(rightHeaderLogoPath)
+    ]);
+
+    const renderCoverPage = async (): Promise<boolean> => {
+      const imageData = await this.loadImageForPdf(coverImagePath);
+      if (!imageData) {
+        return false;
+      }
+
+      const widthRatio = pageWidth / imageData.width;
+      const heightRatio = pageHeight / imageData.height;
+      const scale = Math.min(widthRatio, heightRatio);
+      const drawWidth = imageData.width * scale;
+      const drawHeight = imageData.height * scale;
+      const x = (pageWidth - drawWidth) / 2;
+      const yOffset = (pageHeight - drawHeight) / 2;
+
+      pdf.addImage(imageData.dataUrl, imageData.format, x, yOffset, drawWidth, drawHeight);
+      return true;
+    };
 
     const drawHeader = (): void => {
-      setText(theme.brand);
-      pdf.setFont('helvetica', 'bold');
-      pdf.setFontSize(11);
-      pdf.text('DocsApp Export', marginLeft, 34);
+      if (leftHeaderLogo) {
+        const targetHeight = 26;
+        const scale = targetHeight / leftHeaderLogo.height;
+        const drawWidth = leftHeaderLogo.width * scale;
+        const drawHeight = leftHeaderLogo.height * scale;
+        pdf.addImage(leftHeaderLogo.dataUrl, leftHeaderLogo.format, marginLeft, 22, drawWidth, drawHeight);
+      }
 
-      setText(theme.muted);
-      pdf.setFont('helvetica', 'normal');
-      pdf.setFontSize(9);
-      pdf.text(exportDate, pageWidth - marginRight, 34, { align: 'right' });
+      if (rightHeaderLogo) {
+        const targetHeight = 24;
+        const scale = targetHeight / rightHeaderLogo.height;
+        const drawWidth = rightHeaderLogo.width * scale;
+        const drawHeight = rightHeaderLogo.height * scale;
+        pdf.addImage(
+          rightHeaderLogo.dataUrl,
+          rightHeaderLogo.format,
+          pageWidth - marginRight - drawWidth,
+          22,
+          drawWidth,
+          drawHeight
+        );
+      }
+
+      // Header text removed per export requirements.
 
       setStroke(theme.border);
       pdf.setLineWidth(0.8);
@@ -485,7 +524,7 @@ export class ProjectComponent implements OnInit {
       ensureSpace(options.lineHeight + 6);
 
       for (const run of runs) {
-        const normalizedText = this.sanitizePdfText(run.text, true);
+        const normalizedText = this.sanitizePdfRunText(run.text);
         const runLines = normalizedText.split('\n');
         for (let lineIndex = 0; lineIndex < runLines.length; lineIndex++) {
           const line = runLines[lineIndex];
@@ -582,6 +621,10 @@ export class ProjectComponent implements OnInit {
       }
     };
 
+    if (await renderCoverPage()) {
+      pdf.addPage();
+    }
+
     const docsByFolder = new Map<string, Array<Document & { pages: Page[] }>>();
     for (const doc of documentsWithPages) {
       const key = doc.folderId || '__unfiled__';
@@ -601,7 +644,6 @@ export class ProjectComponent implements OnInit {
       theme.muted,
       0
     );
-    writeWrapped(`Exported ${exportDate}`, 10, 'normal', 14, theme.muted, 0);
     divider(10, 24);
 
     for (const folder of folders) {
@@ -819,8 +861,8 @@ export class ProjectComponent implements OnInit {
 
   private sanitizePdfText(input: string, keepLineBreaks = false): string {
     let normalized = (input || '')
-      .replace(/[\u0000-\u001F\u007F]/g, ' ')
-      .replace(/[^\u0020-\u00FF\n\r\t]/g, '');
+      .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, ' ')
+      .replace(/[^\u0020-\u00FF\u2022\n\r\t]/g, '');
 
     if (keepLineBreaks) {
       normalized = normalized
@@ -832,6 +874,15 @@ export class ProjectComponent implements OnInit {
     }
 
     return normalized.replace(/\s+/g, ' ').trim();
+  }
+
+  private sanitizePdfRunText(input: string): string {
+    return (input || '')
+      .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, ' ')
+      .replace(/[^\u0020-\u00FF\u2022\n\r\t]/g, '')
+      .replace(/\r/g, '')
+      .replace(/[ \t]+\n/g, '\n')
+      .replace(/\n{3,}/g, '\n\n');
   }
 
   private loadImageForPdf(imageUrl: string): Promise<{ dataUrl: string; width: number; height: number; format: 'PNG' | 'JPEG' } | null> {
@@ -956,10 +1007,22 @@ export class ProjectComponent implements OnInit {
       }
 
       if (tag === 'ol') {
+        if (runs.length > 0 && !runs[runs.length - 1].text.endsWith('\n')) {
+          runs.push({ text: '\n', ...next });
+        }
         orderedListIndex.set(el, 0);
       }
 
+      if (tag === 'ul') {
+        if (runs.length > 0 && !runs[runs.length - 1].text.endsWith('\n')) {
+          runs.push({ text: '\n', ...next });
+        }
+      }
+
       if (tag === 'li') {
+        if (runs.length > 0 && !runs[runs.length - 1].text.endsWith('\n')) {
+          runs.push({ text: '\n', ...next });
+        }
         const parent = el.parentElement;
         if (parent && parent.tagName.toLowerCase() === 'ol') {
           const index = (orderedListIndex.get(parent) ?? 0) + 1;
@@ -1009,7 +1072,7 @@ export class ProjectComponent implements OnInit {
         if (parsedBg) next.backgroundColor = parsedBg;
       }
 
-      const isBlock = ['div', 'p', 'li', 'blockquote', 'pre', 'h1', 'h2', 'h3'].includes(tag);
+      const isBlock = ['div', 'p', 'li', 'ul', 'ol', 'blockquote', 'pre', 'h1', 'h2', 'h3'].includes(tag);
       if (isBlock && tag !== 'li' && runs.length > 0 && !runs[runs.length - 1].text.endsWith('\n')) {
         runs.push({ text: '\n', ...next });
       }

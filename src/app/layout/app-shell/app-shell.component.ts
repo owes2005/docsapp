@@ -36,6 +36,8 @@ interface PdfRenderContext {
   pageHeight: number;
   contentWidth: number;
   y: number;
+  leftLogo?: { dataUrl: string; width: number; height: number; format: 'PNG' | 'JPEG' } | null;
+  rightLogo?: { dataUrl: string; width: number; height: number; format: 'PNG' | 'JPEG' } | null;
 }
 
 interface PdfTextRun {
@@ -57,6 +59,9 @@ export class AppShellComponent implements OnInit {
   currentRoute = '';
   currentDocTitle = 'Untitled';
   currentDocId: string | null = null;
+  private readonly coverImagePath = encodeURI('assets/Optima User Manual page.jpg');
+  private readonly leftHeaderLogoPath = encodeURI('assets/OPTIMANEW.svg');
+  private readonly rightHeaderLogoPath = encodeURI('assets/KELLTON2.svg');
   // Set this to a base64 data URI (e.g. data:image/png;base64,...) to show a logo in PDF headers.
   private readonly pdfLogoBase64: string | null = null;
   
@@ -104,7 +109,10 @@ export class AppShellComponent implements OnInit {
 
       const pdf = new jsPDF({ unit: 'pt', format: 'a4' });
       const theme = this.applyTheme();
-      const exportedAt = new Date().toLocaleString();
+      const hasCover = await this.renderCoverPage(pdf, this.coverImagePath);
+      if (hasCover) {
+        pdf.addPage();
+      }
       const layout: PdfLayout = {
         marginLeft: 50,
         marginRight: 50,
@@ -114,16 +122,22 @@ export class AppShellComponent implements OnInit {
         sectionGap: 20,
         blockGap: 16
       };
+      const [leftLogo, rightLogo] = await Promise.all([
+        this.loadImageForPdf(this.leftHeaderLogoPath),
+        this.loadImageForPdf(this.rightHeaderLogoPath)
+      ]);
       const context: PdfRenderContext = {
         pdf,
         theme,
         layout,
         docTitle: this.currentDocTitle || 'Untitled',
-        exportedAt,
+        exportedAt: '',
         pageWidth: pdf.internal.pageSize.getWidth(),
         pageHeight: pdf.internal.pageSize.getHeight(),
         contentWidth: pdf.internal.pageSize.getWidth() - layout.marginLeft - layout.marginRight,
-        y: layout.headerHeight + 20
+        y: layout.headerHeight + 20,
+        leftLogo,
+        rightLogo
       };
 
       this.addHeader(context);
@@ -134,7 +148,7 @@ export class AppShellComponent implements OnInit {
       this.renderHeading(context, context.docTitle || 'Untitled', 1);
       this.renderParagraph(
         context,
-        `Pages ${sortedPages.length} | Blocks ${totalBlockCount} | Exported ${exportedAt}`,
+        `Pages ${sortedPages.length}`,
         { size: 10, style: 'normal', color: context.theme.mutedColor }
       );
       this.setStrokeColor(context, context.theme.mutedColor);
@@ -327,8 +341,51 @@ export class AppShellComponent implements OnInit {
     };
   }
 
+  private async renderCoverPage(pdf: jsPDF, imageUrl: string): Promise<boolean> {
+    const imageData = await this.loadImageForPdf(imageUrl);
+    if (!imageData) {
+      return false;
+    }
+
+    const pageWidth = pdf.internal.pageSize.getWidth();
+    const pageHeight = pdf.internal.pageSize.getHeight();
+    const widthRatio = pageWidth / imageData.width;
+    const heightRatio = pageHeight / imageData.height;
+    const scale = Math.min(widthRatio, heightRatio);
+    const drawWidth = imageData.width * scale;
+    const drawHeight = imageData.height * scale;
+    const x = (pageWidth - drawWidth) / 2;
+    const y = (pageHeight - drawHeight) / 2;
+
+    pdf.addImage(imageData.dataUrl, imageData.format, x, y, drawWidth, drawHeight);
+    return true;
+  }
+
   private addHeader(context: PdfRenderContext): void {
     const { pdf, layout, pageWidth, exportedAt } = context;
+
+    if (context.leftLogo) {
+      const targetHeight = 26;
+      const scale = targetHeight / context.leftLogo.height;
+      const drawWidth = context.leftLogo.width * scale;
+      const drawHeight = context.leftLogo.height * scale;
+      pdf.addImage(context.leftLogo.dataUrl, context.leftLogo.format, layout.marginLeft, 22, drawWidth, drawHeight);
+    }
+
+    if (context.rightLogo) {
+      const targetHeight = 24;
+      const scale = targetHeight / context.rightLogo.height;
+      const drawWidth = context.rightLogo.width * scale;
+      const drawHeight = context.rightLogo.height * scale;
+      pdf.addImage(
+        context.rightLogo.dataUrl,
+        context.rightLogo.format,
+        pageWidth - layout.marginRight - drawWidth,
+        22,
+        drawWidth,
+        drawHeight
+      );
+    }
 
     if (this.pdfLogoBase64) {
       try {
@@ -338,15 +395,7 @@ export class AppShellComponent implements OnInit {
       }
     }
 
-    this.setTextColor(context, context.theme.primaryColor);
-    pdf.setFont(context.theme.fontFamily, 'bold');
-    pdf.setFontSize(11);
-    pdf.text('DocsApp Export', layout.marginLeft + (this.pdfLogoBase64 ? 22 : 0), 32);
-
-    this.setTextColor(context, context.theme.mutedColor);
-    pdf.setFont(context.theme.fontFamily, 'normal');
-    pdf.setFontSize(9);
-    pdf.text(exportedAt, pageWidth - layout.marginRight, 32, { align: 'right' });
+    // Header text removed per export requirements.
 
     this.setStrokeColor(context, context.theme.mutedColor);
     pdf.setLineWidth(0.8);
@@ -852,10 +901,22 @@ export class AppShellComponent implements OnInit {
       }
 
       if (tag === 'ol') {
+        if (runs.length > 0 && !runs[runs.length - 1].text.endsWith('\n')) {
+          runs.push({ text: '\n', ...next });
+        }
         orderedListIndex.set(el, 0);
       }
 
+      if (tag === 'ul') {
+        if (runs.length > 0 && !runs[runs.length - 1].text.endsWith('\n')) {
+          runs.push({ text: '\n', ...next });
+        }
+      }
+
       if (tag === 'li') {
+        if (runs.length > 0 && !runs[runs.length - 1].text.endsWith('\n')) {
+          runs.push({ text: '\n', ...next });
+        }
         const parent = el.parentElement;
         if (parent && parent.tagName.toLowerCase() === 'ol') {
           const index = (orderedListIndex.get(parent) ?? 0) + 1;
@@ -905,7 +966,7 @@ export class AppShellComponent implements OnInit {
         if (parsedBg) next.backgroundColor = parsedBg;
       }
 
-      const isBlock = ['div', 'p', 'li', 'blockquote', 'pre', 'h1', 'h2', 'h3'].includes(tag);
+      const isBlock = ['div', 'p', 'li', 'ul', 'ol', 'blockquote', 'pre', 'h1', 'h2', 'h3'].includes(tag);
       if (isBlock && tag !== 'li' && runs.length > 0 && !runs[runs.length - 1].text.endsWith('\n')) {
         runs.push({ text: '\n', ...next });
       }
