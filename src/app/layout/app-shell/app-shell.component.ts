@@ -21,6 +21,7 @@ interface PdfLayout {
   headerHeight: number;
   footerHeight: number;
   sectionGap: number;
+  blockGap: number;
 }
 
 interface PdfRenderContext {
@@ -108,7 +109,8 @@ export class AppShellComponent implements OnInit {
         marginBottom: 54,
         headerHeight: 62,
         footerHeight: 20,
-        sectionGap: 20
+        sectionGap: 20,
+        blockGap: 16
       };
       const context: PdfRenderContext = {
         pdf,
@@ -162,7 +164,18 @@ export class AppShellComponent implements OnInit {
           continue;
         }
 
-        for (const block of blocks) {
+        for (let blockIndex = 0; blockIndex < blocks.length; blockIndex++) {
+          const block = blocks[blockIndex];
+          if (blockIndex > 0) {
+            const prevBlock = blocks[blockIndex - 1];
+            const prevIsImageLike = prevBlock.type === 'image' || prevBlock.type === 'gallery';
+            const currIsImageLike = block.type === 'image' || block.type === 'gallery';
+            const gapBefore = (prevIsImageLike || currIsImageLike)
+              ? Math.max(context.layout.blockGap, 24)
+              : context.layout.blockGap;
+            this.ensureSpace(context, gapBefore);
+            context.y += gapBefore;
+          }
           const rawContent = typeof block.content === 'string' ? block.content : '';
           const textContent = this.htmlToPlainText(rawContent, block.type === 'code');
           const hasHtmlFormatting = this.containsHtml(rawContent);
@@ -288,7 +301,6 @@ export class AppShellComponent implements OnInit {
               break;
           }
 
-          context.y += 4;
         }
       }
 

@@ -266,6 +266,7 @@ export class ProjectComponent implements OnInit {
     const marginTop = 62;
     const marginBottom = 54;
     const footerHeight = 20;
+    const blockGap = 16;
     const contentWidth = pageWidth - marginLeft - marginRight;
     let y = marginTop + 26;
 
@@ -591,7 +592,18 @@ export class ProjectComponent implements OnInit {
             continue;
           }
 
-          for (const block of blocks) {
+          for (let blockIndex = 0; blockIndex < blocks.length; blockIndex++) {
+            const block = blocks[blockIndex];
+            if (blockIndex > 0) {
+              const prevBlock = blocks[blockIndex - 1];
+              const prevIsImageLike = prevBlock.type === 'image' || prevBlock.type === 'gallery';
+              const currIsImageLike = block.type === 'image' || block.type === 'gallery';
+              const gapBefore = (prevIsImageLike || currIsImageLike)
+                ? Math.max(blockGap, 24)
+                : blockGap;
+              ensureSpace(gapBefore);
+              y += gapBefore;
+            }
             const raw = typeof block.content === 'string' ? block.content : '';
             const text = this.sanitizePdfText(this.htmlToPlainText(raw, block.type === 'code'));
 
@@ -694,7 +706,6 @@ export class ProjectComponent implements OnInit {
             writeWrapped(text || '(empty)', 12, 'normal', 18, theme.text, 36);
           }
 
-          y += 2;
         }
 
         y += 6;

@@ -75,7 +75,7 @@
 
 .content-block {
   position: relative;
-  margin-bottom: 4px;
+  margin-bottom: 16px;
   display: flex;
   gap: 8px;
   align-items: flex-start;
@@ -213,7 +213,7 @@
 
 /* Image Block */
 .image-block {
-  margin: 24px 0;
+  margin: 0;
 }
 
 .image-upload-options {
@@ -405,7 +405,7 @@
 
 /* Gallery Block */
 .gallery-block {
-  margin: 20px 0;
+  margin: 0;
 }
 
 .gallery-grid {
@@ -457,7 +457,7 @@
 
 /* Divider Block */
 .divider-block {
-  margin: 16px 0;
+  margin: 0;
 }
 
 /* Code Block */
