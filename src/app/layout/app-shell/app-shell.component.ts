@@ -11,6 +11,8 @@ interface PdfTheme {
   textColor: number[];
   mutedColor: number[];
   codeBackground: number[];
+  borderColor: number[];
+  sectionBackground: number[];
   fontFamily: string;
 }
 
@@ -152,7 +154,7 @@ export class AppShellComponent implements OnInit {
           this.startNewPage(context);
         }
 
-        this.renderHeading(context, `Page ${pageIndex + 1}: ${page.title || 'Untitled page'}`, 2);
+        this.renderSectionHeader(context, `Page ${pageIndex + 1}: ${page.title || 'Untitled page'}`);
 
         const blocks = [...(page.content?.blocks || [])].sort((a, b) => a.order - b.order);
         if (blocks.length === 0) {
@@ -319,6 +321,8 @@ export class AppShellComponent implements OnInit {
       textColor: [33, 37, 41],
       mutedColor: [120, 130, 145],
       codeBackground: [245, 247, 250],
+      borderColor: [226, 232, 240],
+      sectionBackground: [248, 250, 252],
       fontFamily: 'helvetica'
     };
   }
@@ -349,6 +353,45 @@ export class AppShellComponent implements OnInit {
     pdf.line(layout.marginLeft, layout.headerHeight - 10, pageWidth - layout.marginRight, layout.headerHeight - 10);
 
     context.y = layout.headerHeight + 26;
+  }
+
+  private renderSectionHeader(context: PdfRenderContext, text: string): void {
+    if (!text.trim()) return;
+
+    const fontSize = 12;
+    const lineHeight = 16;
+    const paddingX = 12;
+    const paddingY = 8;
+    const boxWidth = context.contentWidth;
+
+    context.pdf.setFont(context.theme.fontFamily, 'bold');
+    context.pdf.setFontSize(fontSize);
+    this.setTextColor(context, context.theme.primaryColor);
+
+    const lines = context.pdf.splitTextToSize(text, boxWidth - paddingX * 2);
+    const boxHeight = lines.length * lineHeight + paddingY * 2;
+
+    this.ensureSpace(context, boxHeight + 8);
+    this.setFillColor(context, context.theme.sectionBackground);
+    this.setStrokeColor(context, context.theme.borderColor);
+    context.pdf.setLineWidth(0.6);
+    context.pdf.roundedRect(
+      context.layout.marginLeft,
+      context.y,
+      boxWidth,
+      boxHeight,
+      6,
+      6,
+      'FD'
+    );
+
+    let textY = context.y + paddingY + lineHeight - 4;
+    for (const line of lines) {
+      context.pdf.text(line, context.layout.marginLeft + paddingX, textY);
+      textY += lineHeight;
+    }
+
+    context.y += boxHeight + 10;
   }
 
   private renderHeading(context: PdfRenderContext, text: string, level: number): void {
@@ -722,6 +765,22 @@ export class AppShellComponent implements OnInit {
     const container = document.createElement('div');
     container.innerHTML = input;
 
+    // Preserve list semantics for PDF output.
+    const orderedLists = Array.from(container.querySelectorAll('ol'));
+    orderedLists.forEach((ol) => {
+      Array.from(ol.querySelectorAll('li')).forEach((li, index) => {
+        li.insertBefore(document.createTextNode(`${index + 1}. `), li.firstChild);
+        li.appendChild(document.createTextNode('\n'));
+      });
+    });
+    const unorderedLists = Array.from(container.querySelectorAll('ul'));
+    unorderedLists.forEach((ul) => {
+      Array.from(ul.querySelectorAll('li')).forEach((li) => {
+        li.insertBefore(document.createTextNode('• '), li.firstChild);
+        li.appendChild(document.createTextNode('\n'));
+      });
+    });
+
     if (preserveLineBreaks) {
       container.querySelectorAll('br').forEach((br) => br.replaceWith('\n'));
       container.querySelectorAll('p,div,li,blockquote,h1,h2,h3,h4,h5,h6,pre').forEach((el) => {
@@ -759,6 +818,7 @@ export class AppShellComponent implements OnInit {
     const container = document.createElement('div');
     container.innerHTML = this.normalizeExportHtml(html);
     const runs: PdfTextRun[] = [];
+    const orderedListIndex = new WeakMap<HTMLElement, number>();
 
     const walk = (node: Node, state: Omit<PdfTextRun, 'text'>): void => {
       if (node.nodeType === Node.TEXT_NODE) {
@@ -789,6 +849,21 @@ export class AppShellComponent implements OnInit {
       if (tag === 'br') {
         runs.push({ text: '\n', ...next });
         return;
+      }
+
+      if (tag === 'ol') {
+        orderedListIndex.set(el, 0);
+      }
+
+      if (tag === 'li') {
+        const parent = el.parentElement;
+        if (parent && parent.tagName.toLowerCase() === 'ol') {
+          const index = (orderedListIndex.get(parent) ?? 0) + 1;
+          orderedListIndex.set(parent, index);
+          runs.push({ text: `${index}. `, ...next });
+        } else {
+          runs.push({ text: '• ', ...next });
+        }
       }
 
       if (tag === 'font') {
@@ -831,7 +906,7 @@ export class AppShellComponent implements OnInit {
       }
 
       const isBlock = ['div', 'p', 'li', 'blockquote', 'pre', 'h1', 'h2', 'h3'].includes(tag);
-      if (isBlock && runs.length > 0 && !runs[runs.length - 1].text.endsWith('\n')) {
+      if (isBlock && tag !== 'li' && runs.length > 0 && !runs[runs.length - 1].text.endsWith('\n')) {
         runs.push({ text: '\n', ...next });
       }
 

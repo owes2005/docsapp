@@ -13,6 +13,7 @@ interface ProjectPdfTheme {
   muted: number[];
   border: number[];
   codeBg: number[];
+  sectionBg: number[];
 }
 
 interface ProjectPdfTextRun {
@@ -256,7 +257,8 @@ export class ProjectComponent implements OnInit {
       text: [24, 28, 33],
       muted: [102, 114, 128],
       border: [226, 232, 240],
-      codeBg: [246, 248, 252]
+      codeBg: [246, 248, 252],
+      sectionBg: [248, 250, 252]
     };
 
     const pageWidth = pdf.internal.pageSize.getWidth();
@@ -336,6 +338,48 @@ export class ProjectComponent implements OnInit {
         pdf.text(line, startX, y);
         y += lineHeight;
       }
+    };
+
+    const renderBandHeader = (
+      text: string,
+      options: {
+        size: number;
+        lineHeight: number;
+        indent?: number;
+        textColor?: number[];
+        backgroundColor?: number[];
+      }
+    ): void => {
+      const clean = this.sanitizePdfText(text || '').trim();
+      if (!clean) return;
+
+      const indent = options.indent ?? 0;
+      const paddingX = 12;
+      const paddingY = 6;
+      const boxX = marginLeft + indent;
+      const boxWidth = contentWidth - indent;
+
+      pdf.setFont('helvetica', 'bold');
+      pdf.setFontSize(options.size);
+      setText(options.textColor || theme.text);
+
+      const rawLines = pdf.splitTextToSize(clean, boxWidth - paddingX * 2) as string[];
+      const lines = this.wrapLongWords(pdf, rawLines, boxWidth - paddingX * 2);
+      const boxHeight = lines.length * options.lineHeight + paddingY * 2;
+
+      ensureSpace(boxHeight + 8);
+      setFill(options.backgroundColor || theme.sectionBg);
+      setStroke(theme.border);
+      pdf.setLineWidth(0.6);
+      pdf.roundedRect(boxX, y, boxWidth, boxHeight, 6, 6, 'FD');
+
+      let textY = y + paddingY + options.lineHeight - 4;
+      for (const line of lines) {
+        pdf.text(line, boxX + paddingX, textY);
+        textY += options.lineHeight;
+      }
+
+      y += boxHeight + 10;
     };
 
     const divider = (gapBefore = 8, gapAfter = 20): void => {
@@ -561,7 +605,13 @@ export class ProjectComponent implements OnInit {
     divider(10, 24);
 
     for (const folder of folders) {
-      writeWrapped(`Folder: ${folder.name}`, 16, 'bold', 22, theme.brand, 0);
+      renderBandHeader(`Folder: ${folder.name}`, {
+        size: 14,
+        lineHeight: 18,
+        indent: 0,
+        textColor: theme.brand,
+        backgroundColor: theme.sectionBg
+      });
 
       const folderDocs = (docsByFolder.get(folder.id) || []).sort((a, b) =>
         a.title.localeCompare(b.title)
@@ -574,7 +624,13 @@ export class ProjectComponent implements OnInit {
       }
 
       for (const doc of folderDocs) {
-        writeWrapped(`Document: ${doc.title}`, 13, 'bold', 18, theme.text, 12);
+        renderBandHeader(`Document: ${doc.title}`, {
+          size: 12,
+          lineHeight: 16,
+          indent: 12,
+          textColor: theme.text,
+          backgroundColor: [252, 253, 255]
+        });
         writeWrapped(`Updated ${new Date(doc.updatedAt).toLocaleString()}`, 10, 'normal', 14, theme.muted, 12);
 
         if (!doc.pages || doc.pages.length === 0) {
@@ -818,6 +874,22 @@ export class ProjectComponent implements OnInit {
 
     const container = document.createElement('div');
     container.innerHTML = input;
+    // Preserve list semantics for PDF output.
+    const orderedLists = Array.from(container.querySelectorAll('ol'));
+    orderedLists.forEach((ol) => {
+      Array.from(ol.querySelectorAll('li')).forEach((li, index) => {
+        li.insertBefore(document.createTextNode(`${index + 1}. `), li.firstChild);
+        li.appendChild(document.createTextNode('\n'));
+      });
+    });
+    const unorderedLists = Array.from(container.querySelectorAll('ul'));
+    unorderedLists.forEach((ul) => {
+      Array.from(ul.querySelectorAll('li')).forEach((li) => {
+        li.insertBefore(document.createTextNode('• '), li.firstChild);
+        li.appendChild(document.createTextNode('\n'));
+      });
+    });
+
     if (preserveLineBreaks) {
       container.querySelectorAll('br').forEach((br) => br.replaceWith('\n'));
       container.querySelectorAll('p,div,li,blockquote,h1,h2,h3,h4,h5,h6,pre').forEach((el) => {
@@ -852,6 +924,7 @@ export class ProjectComponent implements OnInit {
     const container = document.createElement('div');
     container.innerHTML = this.normalizeExportHtml(html);
     const runs: ProjectPdfTextRun[] = [];
+    const orderedListIndex = new WeakMap<HTMLElement, number>();
 
     const walk = (node: Node, state: Omit<ProjectPdfTextRun, 'text'>): void => {
       if (node.nodeType === Node.TEXT_NODE) {
@@ -880,6 +953,21 @@ export class ProjectComponent implements OnInit {
       if (tag === 'br') {
         runs.push({ text: '\n', ...next });
         return;
+      }
+
+      if (tag === 'ol') {
+        orderedListIndex.set(el, 0);
+      }
+
+      if (tag === 'li') {
+        const parent = el.parentElement;
+        if (parent && parent.tagName.toLowerCase() === 'ol') {
+          const index = (orderedListIndex.get(parent) ?? 0) + 1;
+          orderedListIndex.set(parent, index);
+          runs.push({ text: `${index}. `, ...next });
+        } else {
+          runs.push({ text: '• ', ...next });
+        }
       }
 
       if (tag === 'font') {
@@ -922,7 +1010,7 @@ export class ProjectComponent implements OnInit {
       }
 
       const isBlock = ['div', 'p', 'li', 'blockquote', 'pre', 'h1', 'h2', 'h3'].includes(tag);
-      if (isBlock && runs.length > 0 && !runs[runs.length - 1].text.endsWith('\n')) {
+      if (isBlock && tag !== 'li' && runs.length > 0 && !runs[runs.length - 1].text.endsWith('\n')) {
         runs.push({ text: '\n', ...next });
       }
 
