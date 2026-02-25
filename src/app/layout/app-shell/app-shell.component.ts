@@ -365,7 +365,7 @@ export class AppShellComponent implements OnInit {
     const { pdf, layout, pageWidth, exportedAt } = context;
 
     if (context.leftLogo) {
-      const targetHeight = 26;
+      const targetHeight = 20;
       const scale = targetHeight / context.leftLogo.height;
       const drawWidth = context.leftLogo.width * scale;
       const drawHeight = context.leftLogo.height * scale;
@@ -373,7 +373,7 @@ export class AppShellComponent implements OnInit {
     }
 
     if (context.rightLogo) {
-      const targetHeight = 24;
+      const targetHeight = 20;
       const scale = targetHeight / context.rightLogo.height;
       const drawWidth = context.rightLogo.width * scale;
       const drawHeight = context.rightLogo.height * scale;
@@ -395,7 +395,6 @@ export class AppShellComponent implements OnInit {
       }
     }
 
-    // Header text removed per export requirements.
 
     this.setStrokeColor(context, context.theme.mutedColor);
     pdf.setLineWidth(0.8);

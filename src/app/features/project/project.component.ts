@@ -310,7 +310,7 @@ export class ProjectComponent implements OnInit {
 
     const drawHeader = (): void => {
       if (leftHeaderLogo) {
-        const targetHeight = 26;
+        const targetHeight = 20;
         const scale = targetHeight / leftHeaderLogo.height;
         const drawWidth = leftHeaderLogo.width * scale;
         const drawHeight = leftHeaderLogo.height * scale;
@@ -318,7 +318,7 @@ export class ProjectComponent implements OnInit {
       }
 
       if (rightHeaderLogo) {
-        const targetHeight = 24;
+        const targetHeight = 20;
         const scale = targetHeight / rightHeaderLogo.height;
         const drawWidth = rightHeaderLogo.width * scale;
         const drawHeight = rightHeaderLogo.height * scale;
