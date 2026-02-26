@@ -108,6 +108,18 @@
       "isOwned": true,
       "createdAt": "2026-02-24T06:06:28.818Z",
       "updatedAt": "2026-02-24T06:06:28.818Z"
+    },
+    {
+      "id": "doc1772082829064",
+      "workspaceId": "ws1",
+      "projectId": "proj7",
+      "folderId": "folder1771820603500",
+      "title": "optima",
+      "icon": "📄",
+      "isFavorite": false,
+      "isOwned": true,
+      "createdAt": "2026-02-26T05:13:49.064Z",
+      "updatedAt": "2026-02-26T05:13:49.064Z"
     }
   ],
   "pages": [

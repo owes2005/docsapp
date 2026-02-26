@@ -354,6 +354,7 @@ export class BlockEditorComponent implements OnInit, OnChanges {
     this.savePage();
   }
 
+  //Image logic
   uploadImage(event: any, blockId: string): void {
     const file = event.target.files[0];
     if (file) {

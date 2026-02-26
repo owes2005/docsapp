@@ -11,7 +11,7 @@ import { filter } from 'rxjs/operators';
 })
 export class MainSidebarComponent implements OnInit {
 
-  currentWorkspace = 'My Workspace';
+  currentWorkspace = 'Optima Workspace';
   projects: Project[] = [];
   folders: Folder[] = [];
   documents: Document[] = [];
