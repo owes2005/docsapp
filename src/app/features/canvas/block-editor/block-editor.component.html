@@ -272,7 +272,7 @@
     </div>
     
     <div class="slash-menu-items">
-      <div *ngFor="let blockType of getFilteredBlockTypes(); let i = index"
+      <div *ngFor="let blockType of filteredBlockTypes; let i = index"
            class="slash-menu-item"
            [class.selected]="i === slashMenuSelectedIndex"
            (mouseenter)="slashMenuSelectedIndex = i"
@@ -291,13 +291,6 @@
       </div>
     </div>
     
-    <div class="slash-menu-footer">
-      <span class="hint">
-        <kbd>↑</kbd> <kbd>↓</kbd> Navigate
-        <kbd>Enter</kbd> Select
-        <kbd>Esc</kbd> Cancel
-      </span>
-    </div>
     
   </div>
 

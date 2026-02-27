@@ -22,6 +22,8 @@ export class BlockEditorComponent implements OnInit, OnChanges {
   slashMenuFilter = '';
   slashMenuSelectedIndex = 0;
   activeBlockId: string | null = null;
+  filteredBlockTypes: any[] = [];
+  private slashRange: Range | null = null;
 
   blockTypes = [
     { 
@@ -222,86 +224,114 @@ export class BlockEditorComponent implements OnInit, OnChanges {
     });
   }
 
-  onKeyDown(event: KeyboardEvent, blockId: string): void {
-    this.activeBlockId = blockId;
-    
-    if (event.key === '/') {
-      setTimeout(() => {
-        this.showSlashMenu = true;
-        this.slashMenuFilter = '';
-        this.slashMenuSelectedIndex = 0;
-        this.positionSlashMenu(event.target as HTMLElement);
-      }, 0);
-    } 
-    else if (this.showSlashMenu) {
-      this.handleSlashMenuKeyboard(event);
+ onKeyDown(event: KeyboardEvent, blockId: string): void {
+  this.activeBlockId = blockId;
+
+  if (event.key === '/') {
+    setTimeout(() => this.openSlashMenu(), 0);
+    return;
+  }
+
+  if (this.showSlashMenu) {
+    this.handleSlashMenuKeyboard(event);
+    return;
+  }
+
+  if (event.key === 'Escape') {
+    this.showSlashMenu = false;
+  }
+
+  if (event.key === 'Enter' && !event.shiftKey) {
+    const block = this.blocks.find(b => b.id === blockId);
+    if (block && block.type === 'heading') {
+      event.preventDefault();
+      this.createBlockAfter(blockId, 'text');
     }
-    else if (event.key === 'Escape') {
-      this.showSlashMenu = false;
-    }
-    else if (event.key === 'Enter' && !event.shiftKey) {
-      const block = this.blocks.find(b => b.id === blockId);
-      if (block && block.type === 'heading') {
-        event.preventDefault();
-        this.createBlockAfter(blockId, 'text');
+  }
+}
+
+openSlashMenu(): void {
+  const selection = window.getSelection();
+  if (!selection || selection.rangeCount === 0) return;
+
+  const range = selection.getRangeAt(0).cloneRange();
+  const rect = range.getBoundingClientRect();
+
+  this.slashRange = range;
+
+  this.slashMenuPosition = {
+    top: rect.bottom + window.scrollY + 8,
+    left: rect.left + window.scrollX
+  };
+
+  this.slashMenuFilter = '';
+  this.slashMenuSelectedIndex = 0;
+  this.filteredBlockTypes = [...this.blockTypes];
+  this.showSlashMenu = true;
+}
+
+ handleSlashMenuKeyboard(event: KeyboardEvent): void {
+  if (!this.filteredBlockTypes.length) return;
+
+  switch (event.key) {
+    case 'ArrowDown':
+      event.preventDefault();
+      this.slashMenuSelectedIndex =
+        (this.slashMenuSelectedIndex + 1) % this.filteredBlockTypes.length;
+      break;
+
+    case 'ArrowUp':
+      event.preventDefault();
+      this.slashMenuSelectedIndex =
+        (this.slashMenuSelectedIndex - 1 + this.filteredBlockTypes.length) %
+        this.filteredBlockTypes.length;
+      break;
+
+    case 'Enter':
+      event.preventDefault();
+      const selected = this.filteredBlockTypes[this.slashMenuSelectedIndex];
+      if (selected) {
+        this.insertBlockType(selected.type, selected.level);
       }
-    }
-  }
+      break;
 
-  handleSlashMenuKeyboard(event: KeyboardEvent): void {
-    const filteredTypes = this.getFilteredBlockTypes();
-    
-    switch (event.key) {
-      case 'ArrowDown':
-        event.preventDefault();
-        this.slashMenuSelectedIndex = Math.min(
-          this.slashMenuSelectedIndex + 1, 
-          filteredTypes.length - 1
-        );
-        break;
-      case 'ArrowUp':
-        event.preventDefault();
-        this.slashMenuSelectedIndex = Math.max(this.slashMenuSelectedIndex - 1, 0);
-        break;
-      case 'Enter':
-        event.preventDefault();
-        const selected = filteredTypes[this.slashMenuSelectedIndex];
-        if (selected) {
-          this.insertBlockType(selected.type, selected.level);
-        }
-        break;
-      case 'Escape':
-        event.preventDefault();
+    case 'Escape':
+      event.preventDefault();
+      this.showSlashMenu = false;
+      break;
+
+    case 'Backspace':
+      if (this.slashMenuFilter.length > 0) {
+        this.slashMenuFilter =
+          this.slashMenuFilter.slice(0, -1);
+        this.updateSlashFilter();
+      } else {
         this.showSlashMenu = false;
-        break;
-      default:
-        if (event.key.length === 1) {
-          this.slashMenuFilter += event.key;
-          this.slashMenuSelectedIndex = 0;
-        } else if (event.key === 'Backspace' && this.slashMenuFilter) {
-          this.slashMenuFilter = this.slashMenuFilter.slice(0, -1);
-          this.slashMenuSelectedIndex = 0;
-        }
-    }
-  }
+      }
+      break;
 
-  getFilteredBlockTypes(): any[] {
-    if (!this.slashMenuFilter) {
-      return this.blockTypes;
-    }
-    return this.blockTypes.filter(bt => 
-      bt.label.toLowerCase().includes(this.slashMenuFilter.toLowerCase()) ||
-      bt.description.toLowerCase().includes(this.slashMenuFilter.toLowerCase())
-    );
+    default:
+      if (event.key.length === 1) {
+        this.slashMenuFilter += event.key;
+        this.updateSlashFilter();
+      }
   }
+  
+}
+updateSlashFilter(): void {
+  const query = this.slashMenuFilter.toLowerCase();
 
-  positionSlashMenu(element: HTMLElement): void {
-    const rect = element.getBoundingClientRect();
-    this.slashMenuPosition = {
-      top: rect.bottom + window.scrollY + 5,
-      left: rect.left + window.scrollX
-    };
-  }
+  this.filteredBlockTypes = this.blockTypes.filter(bt =>
+    bt.label.toLowerCase().includes(query) ||
+    bt.description.toLowerCase().includes(query)
+  );
+
+  this.slashMenuSelectedIndex = 0;
+}
+
+
+
+
 
   createBlockAfter(afterBlockId: string, type: BlockType): void {
     const afterBlock = this.blocks.find(b => b.id === afterBlockId);
@@ -328,6 +358,20 @@ export class BlockEditorComponent implements OnInit, OnChanges {
   }
 
   insertBlockType(type: BlockType, level?: number): void {
+    if (this.slashRange) {
+  const selection = window.getSelection();
+  if (selection) {
+    selection.removeAllRanges();
+    selection.addRange(this.slashRange);
+
+    const node = this.slashRange.startContainer;
+    if (node.nodeType === Node.TEXT_NODE) {
+      const text = node.textContent || '';
+      const cleaned = text.replace(/\/\w*$/, '');
+      node.textContent = cleaned;
+    }
+  }
+}
     if (this.activeBlockId) {
       const activeBlock = this.blocks.find(b => b.id === this.activeBlockId);
       if (activeBlock && !activeBlock.content) {
