@@ -12,7 +12,6 @@ interface ProjectPdfTheme {
   text: number[];
   muted: number[];
   border: number[];
-  codeBg: number[];
   sectionBg: number[];
 }
 
@@ -260,7 +259,6 @@ export class ProjectComponent implements OnInit {
       text: [24, 28, 33],
       muted: [102, 114, 128],
       border: [226, 232, 240],
-      codeBg: [246, 248, 252],
       sectionBg: [248, 250, 252]
     };
 
@@ -428,34 +426,6 @@ export class ProjectComponent implements OnInit {
       pdf.setLineWidth(0.8);
       pdf.line(marginLeft, y, pageWidth - marginRight, y);
       y += gapAfter;
-    };
-
-    const renderCodeBlock = (code: string): void => {
-      const content = this.sanitizePdfText(code || '');
-      pdf.setFont('courier', 'normal');
-      pdf.setFontSize(10);
-
-      const innerPadding = 10;
-      const lineHeight = 13;
-      const innerWidth = contentWidth - innerPadding * 2;
-      const lines = this.wrapLongWords(pdf, pdf.splitTextToSize(content, innerWidth) as string[], innerWidth);
-      const blockHeight = lines.length * lineHeight + innerPadding * 2;
-
-      y += 4;
-      ensureSpace(blockHeight + 12);
-
-      setFill(theme.codeBg);
-      setStroke(theme.border);
-      pdf.roundedRect(marginLeft, y, contentWidth, blockHeight, 4, 4, 'FD');
-
-      setText(theme.text);
-      let lineY = y + innerPadding + 8;
-      for (const line of lines) {
-        pdf.text(line || ' ', marginLeft + innerPadding, lineY);
-        lineY += lineHeight;
-      }
-
-      y += blockHeight + 10;
     };
 
     const renderRichText = (
@@ -703,7 +673,7 @@ export class ProjectComponent implements OnInit {
               y += gapBefore;
             }
             const raw = typeof block.content === 'string' ? block.content : '';
-            const text = this.sanitizePdfText(this.htmlToPlainText(raw, block.type === 'code'));
+            const text = this.sanitizePdfText(this.htmlToPlainText(raw));
 
             if (block.type === 'image') {
               if (block.imageUrl) {
@@ -762,26 +732,6 @@ export class ProjectComponent implements OnInit {
                 });
               } else {
                 writeWrapped(text || 'Untitled heading', headingSize, 'bold', headingSize + 5, theme.text, 36);
-              }
-              continue;
-            }
-
-            if (block.type === 'code') {
-              renderCodeBlock(text || ' ');
-              continue;
-            }
-
-            if (block.type === 'quote') {
-              if (this.containsHtml(raw)) {
-                renderRichText(raw, {
-                  size: 12,
-                  indent: 44,
-                  lineHeight: 18,
-                  baseStyle: 'italic',
-                  color: theme.text
-                });
-              } else {
-                writeWrapped(text || ' ', 12, 'italic', 18, theme.text, 44);
               }
               continue;
             }

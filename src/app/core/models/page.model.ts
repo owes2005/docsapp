@@ -29,8 +29,7 @@ export type BlockType =
   | 'image'
   | 'gallery'
   | 'divider'
-  | 'code'
-  | 'quote';
+
 
 export interface TextFormatting {
   bold?: boolean;

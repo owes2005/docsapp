@@ -10,7 +10,6 @@ interface PdfTheme {
   primaryColor: number[];
   textColor: number[];
   mutedColor: number[];
-  codeBackground: number[];
   borderColor: number[];
   sectionBackground: number[];
   fontFamily: string;
@@ -193,7 +192,7 @@ export class AppShellComponent implements OnInit {
             context.y += gapBefore;
           }
           const rawContent = typeof block.content === 'string' ? block.content : '';
-          const textContent = this.htmlToPlainText(rawContent, block.type === 'code');
+          const textContent = this.htmlToPlainText(rawContent);
           const hasHtmlFormatting = this.containsHtml(rawContent);
 
           switch (block.type) {
@@ -219,21 +218,6 @@ export class AppShellComponent implements OnInit {
               } else {
                 this.renderParagraph(context, textContent || ' ');
               }
-              break;
-            case 'quote':
-              if (hasHtmlFormatting) {
-                this.renderRichText(context, rawContent, {
-                  size: 12,
-                  style: 'italic'
-                });
-              } else {
-                this.renderParagraph(context, `"${textContent || ''}"`, {
-                  style: 'italic'
-                });
-              }
-              break;
-            case 'code':
-              this.renderCodeBlock(context, textContent || ' ');
               break;
             case 'divider':
               this.ensureSpace(context, 16);
@@ -334,7 +318,6 @@ export class AppShellComponent implements OnInit {
       primaryColor: [26, 54, 93],
       textColor: [33, 37, 41],
       mutedColor: [120, 130, 145],
-      codeBackground: [245, 247, 250],
       borderColor: [226, 232, 240],
       sectionBackground: [248, 250, 252],
       fontFamily: 'helvetica'
@@ -631,40 +614,6 @@ export class AppShellComponent implements OnInit {
       context.y += lineHeight + 6;
     }
     this.setTextColor(context, context.theme.textColor);
-  }
-
-  private renderCodeBlock(context: PdfRenderContext, text: string): void {
-    const fontSize = 10;
-    const lineHeight = 13;
-    const padding = 10;
-    const borderRadius = 4;
-    const spacingBefore = 8;
-    const spacingAfter = 10;
-
-    context.pdf.setFont('courier', 'normal');
-    context.pdf.setFontSize(fontSize);
-    const codeLines = context.pdf.splitTextToSize(text || ' ', context.contentWidth - padding * 2);
-    const blockHeight = codeLines.length * lineHeight + padding * 2;
-
-    context.y += spacingBefore;
-    this.ensureSpace(context, blockHeight + spacingAfter);
-
-    const x = context.layout.marginLeft;
-    const y = context.y;
-
-    this.setFillColor(context, context.theme.codeBackground);
-    this.setStrokeColor(context, context.theme.mutedColor);
-    context.pdf.setLineWidth(0.5);
-    context.pdf.roundedRect(x, y, context.contentWidth, blockHeight, borderRadius, borderRadius, 'FD');
-
-    this.setTextColor(context, context.theme.textColor);
-    let textY = y + padding + 8;
-    for (const line of codeLines) {
-      context.pdf.text(line, x + padding, textY);
-      textY += lineHeight;
-    }
-
-    context.y += blockHeight + spacingAfter;
   }
 
   private async renderImage(context: PdfRenderContext, imageUrl: string, maxImageHeight = 260): Promise<boolean> {

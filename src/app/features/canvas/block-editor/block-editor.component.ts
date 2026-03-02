@@ -1,4 +1,4 @@
-import { Component, Input, OnInit, OnChanges } from '@angular/core';
+import { Component, Input, OnInit, OnChanges, OnDestroy } from '@angular/core';
 import { CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-drop';
 import { Page, ContentBlock, BlockType } from 'src/app/core/models/page.model';
 import { PageService } from 'src/app/core/services/page.service';
@@ -11,7 +11,7 @@ import { ImageViewerComponent } from 'src/app/shared/components/image-viewer/ima
   templateUrl: './block-editor.component.html',
   styleUrls: ['./block-editor.component.css'],
 })
-export class BlockEditorComponent implements OnInit, OnChanges {
+export class BlockEditorComponent implements OnInit, OnChanges, OnDestroy {
   @Input() page!: Page;
 
   blocks: ContentBlock[] = [];
@@ -24,6 +24,9 @@ export class BlockEditorComponent implements OnInit, OnChanges {
   activeBlockId: string | null = null;
   filteredBlockTypes: any[] = [];
   private slashRange: Range | null = null;
+  private saveTimeout: any;
+  private scrollTimeout: any;
+  private readonly scrollHandler = this.handleScroll.bind(this);
 
   blockTypes = [
     {
@@ -78,20 +81,6 @@ export class BlockEditorComponent implements OnInit, OnChanges {
       description: 'Visual separator',
       category: 'Basic',
     },
-    {
-      type: 'code',
-      icon: 'code',
-      label: 'Code',
-      description: 'Code block with syntax',
-      category: 'Advanced',
-    },
-    {
-      type: 'quote',
-      icon: 'format_quote',
-      label: 'Quote',
-      description: 'Highlighted quotation',
-      category: 'Basic',
-    },
   ];
 
   constructor(
@@ -104,12 +93,21 @@ export class BlockEditorComponent implements OnInit, OnChanges {
     if (this.page) {
       this.loadPageData();
     }
+
+    // Listen for scroll events to reposition menu
+    window.addEventListener('scroll', this.scrollHandler, true);
   }
 
   ngOnChanges(changes: any): void {
     if (changes.page && changes.page.currentValue) {
       this.loadPageData();
     }
+  }
+
+  ngOnDestroy(): void {
+    window.removeEventListener('scroll', this.scrollHandler, true);
+    if (this.saveTimeout) clearTimeout(this.saveTimeout);
+    if (this.scrollTimeout) clearTimeout(this.scrollTimeout);
   }
 
   loadPageData(): void {
@@ -229,8 +227,23 @@ export class BlockEditorComponent implements OnInit, OnChanges {
   onKeyDown(event: KeyboardEvent, blockId: string): void {
     this.activeBlockId = blockId;
 
-    if (event.key === '/') {
-      setTimeout(() => this.openSlashMenu(), 0);
+    // Handle slash command
+    if (event.key === '/' && !this.showSlashMenu) {
+      const selection = window.getSelection();
+      if (selection && selection.rangeCount > 0) {
+        const range = selection.getRangeAt(0);
+        const textBeforeCursor =
+          range.startContainer.textContent?.substring(0, range.startOffset) ||
+          '';
+
+        // Only open menu if / is typed at start or after space
+        if (
+          textBeforeCursor.trim() === '' ||
+          textBeforeCursor.endsWith(' ')
+        ) {
+          setTimeout(() => this.openSlashMenu(event.target as HTMLElement), 0);
+        }
+      }
       return;
     }
 
@@ -252,24 +265,128 @@ export class BlockEditorComponent implements OnInit, OnChanges {
     }
   }
 
-  openSlashMenu(): void {
+  openSlashMenu(element?: HTMLElement): void {
+    void element;
     const selection = window.getSelection();
     if (!selection || selection.rangeCount === 0) return;
 
-    const range = selection.getRangeAt(0).cloneRange();
-    const rect = range.getBoundingClientRect();
+    // Store the current range
+    this.slashRange = selection.getRangeAt(0).cloneRange();
 
-    this.slashRange = range;
+    // Get cursor position
+    const range = selection.getRangeAt(0);
+    const rangeRect = range.getBoundingClientRect();
+
+    // Get the editor container
+    const editorContainer = document.querySelector(
+      '.page-canvas, .canvas-editor',
+    );
+    const containerRect = editorContainer?.getBoundingClientRect();
+
+    let top: number;
+    let left: number;
+
+    if (containerRect) {
+      // Position relative to container (for absolute positioning)
+      top = rangeRect.bottom - containerRect.top + 8;
+      left = rangeRect.left - containerRect.left;
+    } else {
+      // Fallback to fixed positioning with scroll offset
+      top = rangeRect.bottom + window.scrollY + 8;
+      left = rangeRect.left + window.scrollX;
+    }
+
+    // Menu dimensions
+    const menuWidth = 320;
+    const menuHeight = 400;
+
+    // Prevent menu from going off-screen horizontally
+    if (containerRect && left + menuWidth > containerRect.width) {
+      left = containerRect.width - menuWidth - 20;
+    } else if (rangeRect.left + menuWidth > window.innerWidth) {
+      left = window.innerWidth - menuWidth - 20 - (containerRect?.left || 0);
+    }
+
+    // If menu would go below viewport, show above cursor
+    const spaceBelow = window.innerHeight - rangeRect.bottom;
+    if (spaceBelow < menuHeight && rangeRect.top > menuHeight) {
+      if (containerRect) {
+        top = rangeRect.top - containerRect.top - menuHeight - 8;
+      } else {
+        top = rangeRect.top + window.scrollY - menuHeight - 8;
+      }
+    }
 
     this.slashMenuPosition = {
-      top: rect.bottom + window.scrollY + 8,
-      left: rect.left + window.scrollX,
+      top: top,
+      left: left,
     };
 
     this.slashMenuFilter = '';
     this.slashMenuSelectedIndex = 0;
     this.filteredBlockTypes = [...this.blockTypes];
     this.showSlashMenu = true;
+  }
+
+  handleScroll(): void {
+    if (this.showSlashMenu) {
+      // Debounce scroll updates
+      if (this.scrollTimeout) {
+        clearTimeout(this.scrollTimeout);
+      }
+
+      this.scrollTimeout = setTimeout(() => {
+        this.updateMenuPosition();
+      }, 10);
+    }
+  }
+
+  updateMenuPosition(): void {
+    if (!this.slashRange || !this.showSlashMenu) return;
+
+    const selection = window.getSelection();
+    if (selection) {
+      selection.removeAllRanges();
+      selection.addRange(this.slashRange);
+
+      const rangeRect = this.slashRange.getBoundingClientRect();
+      const editorContainer = document.querySelector(
+        '.page-canvas, .canvas-editor',
+      );
+      const containerRect = editorContainer?.getBoundingClientRect();
+
+      let top: number;
+      let left: number;
+
+      if (containerRect) {
+        top = rangeRect.bottom - containerRect.top + 8;
+        left = rangeRect.left - containerRect.left;
+      } else {
+        top = rangeRect.bottom + window.scrollY + 8;
+        left = rangeRect.left + window.scrollX;
+      }
+
+      const menuWidth = 320;
+      const menuHeight = 400;
+
+      if (containerRect && left + menuWidth > containerRect.width) {
+        left = containerRect.width - menuWidth - 20;
+      }
+
+      const spaceBelow = window.innerHeight - rangeRect.bottom;
+      if (spaceBelow < menuHeight && rangeRect.top > menuHeight) {
+        if (containerRect) {
+          top = rangeRect.top - containerRect.top - menuHeight - 8;
+        } else {
+          top = rangeRect.top + window.scrollY - menuHeight - 8;
+        }
+      }
+
+      this.slashMenuPosition = {
+        top: top,
+        left: left,
+      };
+    }
   }
 
   handleSlashMenuKeyboard(event: KeyboardEvent): void {
@@ -280,6 +397,7 @@ export class BlockEditorComponent implements OnInit, OnChanges {
         event.preventDefault();
         this.slashMenuSelectedIndex =
           (this.slashMenuSelectedIndex + 1) % this.filteredBlockTypes.length;
+        this.scrollMenuIntoView();
         break;
 
       case 'ArrowUp':
@@ -287,6 +405,7 @@ export class BlockEditorComponent implements OnInit, OnChanges {
         this.slashMenuSelectedIndex =
           (this.slashMenuSelectedIndex - 1 + this.filteredBlockTypes.length) %
           this.filteredBlockTypes.length;
+        this.scrollMenuIntoView();
         break;
 
       case 'Enter':
@@ -299,20 +418,29 @@ export class BlockEditorComponent implements OnInit, OnChanges {
 
       case 'Escape':
         event.preventDefault();
-        this.showSlashMenu = false;
+        this.closeSlashMenu(true);
         break;
 
       case 'Backspace':
         if (this.slashMenuFilter.length > 0) {
+          event.preventDefault();
           this.slashMenuFilter = this.slashMenuFilter.slice(0, -1);
           this.updateSlashFilter();
         } else {
-          this.showSlashMenu = false;
+          // Close menu and let backspace delete the /
+          this.closeSlashMenu(false);
         }
         break;
 
+      case ' ':
+        // Space closes menu
+        event.preventDefault();
+        this.closeSlashMenu(true);
+        break;
+
       default:
-        if (event.key.length === 1) {
+        if (event.key.length === 1 && !event.ctrlKey && !event.metaKey) {
+          event.preventDefault();
           this.slashMenuFilter += event.key;
           this.updateSlashFilter();
         }
@@ -324,10 +452,25 @@ export class BlockEditorComponent implements OnInit, OnChanges {
     this.filteredBlockTypes = this.blockTypes.filter(
       (bt) =>
         bt.label.toLowerCase().includes(query) ||
-        bt.description.toLowerCase().includes(query),
+        bt.description.toLowerCase().includes(query) ||
+        bt.type.toLowerCase().includes(query),
     );
 
     this.slashMenuSelectedIndex = 0;
+
+    // If no matches, close menu
+    if (this.filteredBlockTypes.length === 0) {
+      this.closeSlashMenu(true);
+    }
+  }
+
+  scrollMenuIntoView(): void {
+    setTimeout(() => {
+      const selectedItem = document.querySelector('.slash-menu-item.selected');
+      if (selectedItem) {
+        selectedItem.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+      }
+    }, 0);
   }
 
   createBlockAfter(afterBlockId: string, type: BlockType): void {
@@ -357,44 +500,130 @@ export class BlockEditorComponent implements OnInit, OnChanges {
   }
 
   insertBlockType(type: BlockType, level?: number): void {
+    // Remove the slash and any typed filter text
     if (this.slashRange) {
       const selection = window.getSelection();
       if (selection) {
         selection.removeAllRanges();
         selection.addRange(this.slashRange);
 
-        const node = this.slashRange.startContainer;
-        if (node.nodeType === Node.TEXT_NODE) {
-          const text = node.textContent || '';
-          const cleaned = text.replace(/\/\w*$/, '');
-          node.textContent = cleaned;
+        // Find and remove the /command text
+        const container = this.slashRange.startContainer;
+        if (container.nodeType === Node.TEXT_NODE && container.textContent) {
+          const cursorPos = this.slashRange.startOffset;
+          const text = container.textContent;
+
+          // Find the position of the / before cursor
+          const slashPos = text.lastIndexOf('/', cursorPos);
+
+          if (slashPos !== -1) {
+            // Remove from / to cursor position
+            const beforeSlash = text.substring(0, slashPos);
+            const afterCursor = text.substring(cursorPos);
+            container.textContent = beforeSlash + afterCursor;
+
+            // Set cursor position
+            const range = document.createRange();
+            range.setStart(container, slashPos);
+            range.collapse(true);
+            selection.removeAllRanges();
+            selection.addRange(range);
+          }
         }
       }
     }
+
+    // Close menu
+    this.closeSlashMenu(false);
+
+    // If current block is empty, convert it
     if (this.activeBlockId) {
       const activeBlock = this.blocks.find((b) => b.id === this.activeBlockId);
-      if (activeBlock && !activeBlock.content) {
-        activeBlock.type = type;
-        if (level) activeBlock.level = level;
-        this.showSlashMenu = false;
-        this.savePage();
-        return;
+      if (activeBlock) {
+        const element = document.querySelector(
+          `[data-block-id="${this.activeBlockId}"]`,
+        ) as HTMLElement;
+        const isEmpty =
+          !element?.textContent?.trim() || element?.innerHTML === '<br>';
+
+        if (isEmpty) {
+          activeBlock.type = type;
+          if (level) activeBlock.level = level;
+          activeBlock.content = '';
+          this.savePage();
+
+          // Focus the block
+          setTimeout(() => {
+            if (element) {
+              element.focus();
+            }
+          }, 50);
+          return;
+        }
       }
     }
 
-    const newBlock: ContentBlock = {
-      id: 'block' + Date.now(),
-      type: type,
-      content: '',
-      order: this.blocks.length,
-    };
+    // Otherwise create new block below
+    if (this.activeBlockId) {
+      const activeBlock = this.blocks.find((b) => b.id === this.activeBlockId);
+      if (activeBlock) {
+        const newBlock: ContentBlock = {
+          id: 'block' + Date.now(),
+          type: type,
+          content: '',
+          order: activeBlock.order + 1,
+        };
 
-    if (level) newBlock.level = level;
+        if (level) newBlock.level = level;
 
-    this.blocks.push(newBlock);
+        this.blocks.splice(activeBlock.order + 1, 0, newBlock);
+        this.reorderBlocks();
+        this.savePage();
+
+        setTimeout(() => {
+          const newElement = document.querySelector(
+            `[data-block-id="${newBlock.id}"]`,
+          );
+          if (newElement) {
+            (newElement as HTMLElement).focus();
+          }
+        }, 100);
+      }
+    }
+  }
+
+  closeSlashMenu(keepSlash: boolean): void {
+    if (!keepSlash && this.slashRange) {
+      // Remove the / character
+      const selection = window.getSelection();
+      if (selection) {
+        selection.removeAllRanges();
+        selection.addRange(this.slashRange);
+
+        const container = this.slashRange.startContainer;
+        if (container.nodeType === Node.TEXT_NODE && container.textContent) {
+          const cursorPos = this.slashRange.startOffset;
+          const text = container.textContent;
+          const slashPos = text.lastIndexOf('/', cursorPos);
+
+          if (slashPos !== -1) {
+            const beforeSlash = text.substring(0, slashPos);
+            const afterSlash = text.substring(slashPos + 1);
+            container.textContent = beforeSlash + afterSlash;
+
+            const range = document.createRange();
+            range.setStart(container, slashPos);
+            range.collapse(true);
+            selection.removeAllRanges();
+            selection.addRange(range);
+          }
+        }
+      }
+    }
+
     this.showSlashMenu = false;
-    this.editingBlockId = newBlock.id;
-    this.savePage();
+    this.slashMenuFilter = '';
+    this.slashRange = null;
   }
 
   //Image logic

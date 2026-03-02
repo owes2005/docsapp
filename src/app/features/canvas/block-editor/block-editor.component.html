@@ -205,27 +205,7 @@
           <mat-divider></mat-divider>
         </div>
 
-        <!-- Code Block -->
-        <pre *ngIf="block.type === 'code'"
-             class="block-code"
-             contenteditable="true"
-             [attr.data-block-id]="block.id"
-             [innerHTML]="block.content"
-             (blur)="updateBlock(block.id, $event)"
-             (keydown)="onKeyDown($event, block.id)"
-             data-placeholder="Code...">
-        </pre>
-
-        <!-- Quote Block -->
-        <blockquote *ngIf="block.type === 'quote'"
-                    class="block-quote"
-                    contenteditable="true"
-                    [attr.data-block-id]="block.id"
-                    [innerHTML]="block.content"
-                    (blur)="updateBlock(block.id, $event)"
-                    (keydown)="onKeyDown($event, block.id)"
-                    data-placeholder="Quote...">
-        </blockquote>
+       
 
       </div>
 
@@ -260,38 +240,47 @@
   </div>
 
   <!-- Slash Command Menu -->
-  <div *ngIf="showSlashMenu" 
-       class="slash-menu"
+  <div class="slash-menu"
+       *ngIf="showSlashMenu"
        [style.top.px]="slashMenuPosition.top"
        [style.left.px]="slashMenuPosition.left">
-    
-    <div class="slash-menu-header">
-      <mat-icon>search</mat-icon>
-      <span *ngIf="!slashMenuFilter">Type to filter blocks...</span>
-      <span *ngIf="slashMenuFilter" class="filter-text">{{slashMenuFilter}}</span>
+
+    <div class="slash-menu-header" *ngIf="slashMenuFilter">
+      <span class="slash-filter">{{slashMenuFilter}}</span>
     </div>
-    
+
     <div class="slash-menu-items">
-      <div *ngFor="let blockType of filteredBlockTypes; let i = index"
-           class="slash-menu-item"
+      <div class="slash-menu-item"
+           *ngFor="let blockType of filteredBlockTypes; let i = index"
            [class.selected]="i === slashMenuSelectedIndex"
            (mouseenter)="slashMenuSelectedIndex = i"
            (click)="insertBlockType(blockType.type, blockType.level)">
-        
-        <div class="item-icon">
+
+        <div class="menu-item-icon">
           <mat-icon>{{blockType.icon}}</mat-icon>
         </div>
-        
-        <div class="item-content">
-          <div class="item-label">{{blockType.label}}</div>
-          <div class="item-description">{{blockType.description}}</div>
+
+        <div class="menu-item-content">
+          <div class="menu-item-label">{{blockType.label}}</div>
+          <div class="menu-item-description">{{blockType.description}}</div>
         </div>
-        
-        <div class="item-category">{{blockType.category}}</div>
+
+        <div class="menu-item-shortcut" *ngIf="i === slashMenuSelectedIndex">
+          <span>↵</span>
+        </div>
+      </div>
+
+      <div class="slash-menu-empty" *ngIf="filteredBlockTypes.length === 0">
+        <mat-icon>search_off</mat-icon>
+        <span>No blocks found</span>
       </div>
     </div>
-    
-    
+
+    <div class="slash-menu-footer">
+      <span class="hint">↑↓ Navigate</span>
+      <span class="hint">↵ Select</span>
+      <span class="hint">Esc Close</span>
+    </div>
   </div>
 
   <!-- Text Selection Toolbar -->
