@@ -20,7 +20,7 @@
   </div>
 
   <mat-menu #insertMenu="matMenu" class="insert-dropdown">
-    <button mat-menu-item *ngFor="let blockType of blockTypes" (click)="addBlock($any(blockType.type), blockType.level)">
+    <button mat-menu-item *ngFor="let blockType of blockTypes" (click)="addBlock($any(blockType.type), blockType.level, blockType.listStyle)">
       <mat-icon>{{blockType.icon}}</mat-icon>
       <span>{{blockType.label}}</span>
     </button>
@@ -52,6 +52,7 @@
             contenteditable="true"
             [attr.data-block-id]="block.id"
             [innerHTML]="block.content"
+            (input)="onBlockInput(block.id, $event)"
             (blur)="updateBlock(block.id, $event)"
             (keydown)="onKeyDown($event, block.id)"
             (keyup)="handleKeyboardShortcut($event)"
@@ -63,6 +64,7 @@
             contenteditable="true"
             [attr.data-block-id]="block.id"
             [innerHTML]="block.content"
+            (input)="onBlockInput(block.id, $event)"
             (blur)="updateBlock(block.id, $event)"
             (keydown)="onKeyDown($event, block.id)"
             (keyup)="handleKeyboardShortcut($event)"
@@ -74,6 +76,7 @@
             contenteditable="true"
             [attr.data-block-id]="block.id"
             [innerHTML]="block.content"
+            (input)="onBlockInput(block.id, $event)"
             (blur)="updateBlock(block.id, $event)"
             (keydown)="onKeyDown($event, block.id)"
             (keyup)="handleKeyboardShortcut($event)"
@@ -86,6 +89,7 @@
              contenteditable="true"
              [attr.data-block-id]="block.id"
              [innerHTML]="block.content"
+             (input)="onBlockInput(block.id, $event)"
              (blur)="updateBlock(block.id, $event)"
              (keydown)="onKeyDown($event, block.id)"
              (keyup)="handleKeyboardShortcut($event)"
@@ -205,8 +209,6 @@
           <mat-divider></mat-divider>
         </div>
 
-       
-
       </div>
 
       <!-- Block Actions -->
@@ -224,6 +226,15 @@
         </button>
 
         <mat-menu #blockMenu="matMenu">
+          <button mat-menu-item (click)="applyListToBlock(block.id, 'bulleted')">
+            <mat-icon>format_list_bulleted</mat-icon>
+            <span>Bulleted List</span>
+          </button>
+          <button mat-menu-item (click)="applyListToBlock(block.id, 'numbered')">
+            <mat-icon>format_list_numbered</mat-icon>
+            <span>Numbered List</span>
+          </button>
+          <mat-divider></mat-divider>
           <button mat-menu-item (click)="duplicateBlock(block.id)">
             <mat-icon>content_copy</mat-icon>
             <span>Duplicate</span>
@@ -242,19 +253,16 @@
   <!-- Slash Command Menu -->
   <div class="slash-menu"
        *ngIf="showSlashMenu"
+       (mousedown)="$event.preventDefault()"
        [style.top.px]="slashMenuPosition.top"
        [style.left.px]="slashMenuPosition.left">
-
-    <div class="slash-menu-header" *ngIf="slashMenuFilter">
-      <span class="slash-filter">{{slashMenuFilter}}</span>
-    </div>
 
     <div class="slash-menu-items">
       <div class="slash-menu-item"
            *ngFor="let blockType of filteredBlockTypes; let i = index"
            [class.selected]="i === slashMenuSelectedIndex"
            (mouseenter)="slashMenuSelectedIndex = i"
-           (click)="insertBlockType(blockType.type, blockType.level)">
+           (click)="insertBlockType(blockType.type, blockType.level, blockType.listStyle)">
 
         <div class="menu-item-icon">
           <mat-icon>{{blockType.icon}}</mat-icon>
@@ -266,7 +274,7 @@
         </div>
 
         <div class="menu-item-shortcut" *ngIf="i === slashMenuSelectedIndex">
-          <span>↵</span>
+          <span>Enter</span>
         </div>
       </div>
 
@@ -277,8 +285,8 @@
     </div>
 
     <div class="slash-menu-footer">
-      <span class="hint">↑↓ Navigate</span>
-      <span class="hint">↵ Select</span>
+      <span class="hint">Up/Down Navigate</span>
+      <span class="hint">Enter Select</span>
       <span class="hint">Esc Close</span>
     </div>
   </div>

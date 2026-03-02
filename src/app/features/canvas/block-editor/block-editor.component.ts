@@ -6,6 +6,18 @@ import { HttpClient } from '@angular/common/http';
 import { MatDialog } from '@angular/material/dialog';
 import { ImageViewerComponent } from 'src/app/shared/components/image-viewer/image-viewer.component';
 
+type ListStyle = 'bulleted' | 'numbered';
+
+interface BlockMenuItem {
+  type: BlockType;
+  icon: string;
+  label: string;
+  description: string;
+  category: 'Basic' | 'Media';
+  level?: number;
+  listStyle?: ListStyle;
+}
+
 @Component({
   selector: 'app-block-editor',
   templateUrl: './block-editor.component.html',
@@ -19,16 +31,17 @@ export class BlockEditorComponent implements OnInit, OnChanges, OnDestroy {
   editingBlockId: string | null = null;
   showSlashMenu = false;
   slashMenuPosition = { top: 0, left: 0 };
-  slashMenuFilter = '';
   slashMenuSelectedIndex = 0;
   activeBlockId: string | null = null;
-  filteredBlockTypes: any[] = [];
+  filteredBlockTypes: BlockMenuItem[] = [];
   private slashRange: Range | null = null;
+  private pendingBlockContent = new Map<string, string>();
   private saveTimeout: any;
   private scrollTimeout: any;
+  private readonly saveDebounceMs = 400;
   private readonly scrollHandler = this.handleScroll.bind(this);
 
-  blockTypes = [
+  blockTypes: BlockMenuItem[] = [
     {
       type: 'text',
       icon: 'text_fields',
@@ -81,6 +94,22 @@ export class BlockEditorComponent implements OnInit, OnChanges, OnDestroy {
       description: 'Visual separator',
       category: 'Basic',
     },
+    {
+      type: 'text',
+      icon: 'format_list_bulleted',
+      label: 'Bulleted List',
+      description: 'Create a bulleted list',
+      category: 'Basic',
+      listStyle: 'bulleted',
+    },
+    {
+      type: 'text',
+      icon: 'format_list_numbered',
+      label: 'Numbered List',
+      description: 'Create a numbered list',
+      category: 'Basic',
+      listStyle: 'numbered',
+    },
   ];
 
   constructor(
@@ -124,6 +153,7 @@ export class BlockEditorComponent implements OnInit, OnChanges, OnDestroy {
 
     // Sort blocks by order
     this.blocks.sort((a, b) => a.order - b.order);
+    this.pendingBlockContent.clear();
   }
 
   updatePageTitle(event: any): void {
@@ -134,12 +164,22 @@ export class BlockEditorComponent implements OnInit, OnChanges, OnDestroy {
     this.savePage();
   }
 
-  addBlock(type: BlockType | string, ...args: Array<number | undefined>): void {
-    const level = args[0];
+  addBlock(
+    type: BlockType | string,
+    level?: number,
+    listStyle?: ListStyle,
+  ): void {
+    const listContent =
+      listStyle === 'bulleted'
+        ? '<ul><li></li></ul>'
+        : listStyle === 'numbered'
+          ? '<ol><li></li></ol>'
+          : '';
+
     const newBlock: ContentBlock = {
       id: 'block' + Date.now(),
       type: type as BlockType,
-      content: '',
+      content: listContent,
       order: this.blocks.length,
     };
 
@@ -162,8 +202,20 @@ export class BlockEditorComponent implements OnInit, OnChanges, OnDestroy {
     const block = this.blocks.find((b) => b.id === blockId);
     if (block) {
       block.content = content;
-      this.savePage();
+      this.pendingBlockContent.delete(blockId);
+      if (event?.type === 'input') {
+        this.debouncedSavePage();
+      } else {
+        this.savePage();
+      }
     }
+  }
+
+  onBlockInput(blockId: string, event: any): void {
+    const target = event.target as HTMLElement;
+    const content = this.normalizeEditableHtml(target.innerHTML || '');
+    this.pendingBlockContent.set(blockId, content);
+    this.debouncedSavePage();
   }
 
   deleteBlock(blockId: string): void {
@@ -212,6 +264,25 @@ export class BlockEditorComponent implements OnInit, OnChanges, OnDestroy {
     }, 100);
   }
 
+  applyListToBlock(blockId: string, listStyle: ListStyle): void {
+    const block = this.blocks.find((b) => b.id === blockId);
+    if (!block) return;
+
+    block.type = 'text';
+    block.content =
+      listStyle === 'bulleted' ? '<ul><li></li></ul>' : '<ol><li></li></ol>';
+    this.savePage();
+
+    setTimeout(() => {
+      const newElement = document.querySelector(
+        `[data-block-id="${block.id}"]`,
+      );
+      if (newElement) {
+        (newElement as HTMLElement).focus();
+      }
+    }, 100);
+  }
+
   dropBlock(event: CdkDragDrop<ContentBlock[]>): void {
     moveItemInArray(this.blocks, event.previousIndex, event.currentIndex);
     this.reorderBlocks();
@@ -232,19 +303,11 @@ export class BlockEditorComponent implements OnInit, OnChanges, OnDestroy {
       const selection = window.getSelection();
       if (selection && selection.rangeCount > 0) {
         const range = selection.getRangeAt(0);
-        const textBeforeCursor =
-          range.startContainer.textContent?.substring(0, range.startOffset) ||
-          '';
-
-        // Only open menu if / is typed at start or after space
-        if (
-          textBeforeCursor.trim() === '' ||
-          textBeforeCursor.endsWith(' ')
-        ) {
+        if (this.shouldOpenSlashMenu(range)) {
           setTimeout(() => this.openSlashMenu(event.target as HTMLElement), 0);
+          return;
         }
       }
-      return;
     }
 
     if (this.showSlashMenu) {
@@ -275,46 +338,31 @@ export class BlockEditorComponent implements OnInit, OnChanges, OnDestroy {
 
     // Get cursor position
     const range = selection.getRangeAt(0);
-    const rangeRect = range.getBoundingClientRect();
-
-    // Get the editor container
-    const editorContainer = document.querySelector(
-      '.page-canvas, .canvas-editor',
-    );
-    const containerRect = editorContainer?.getBoundingClientRect();
+    const rangeRect = this.getRangeRect(range);
 
     let top: number;
     let left: number;
-
-    if (containerRect) {
-      // Position relative to container (for absolute positioning)
-      top = rangeRect.bottom - containerRect.top + 8;
-      left = rangeRect.left - containerRect.left;
-    } else {
-      // Fallback to fixed positioning with scroll offset
-      top = rangeRect.bottom + window.scrollY + 8;
-      left = rangeRect.left + window.scrollX;
-    }
+    top = rangeRect.bottom + 8;
+    left = rangeRect.left;
 
     // Menu dimensions
     const menuWidth = 320;
     const menuHeight = 400;
 
     // Prevent menu from going off-screen horizontally
-    if (containerRect && left + menuWidth > containerRect.width) {
-      left = containerRect.width - menuWidth - 20;
-    } else if (rangeRect.left + menuWidth > window.innerWidth) {
-      left = window.innerWidth - menuWidth - 20 - (containerRect?.left || 0);
+    if (left + menuWidth > window.innerWidth - 10) {
+      left = window.innerWidth - menuWidth - 10;
     }
+    if (left < 10) left = 10;
 
     // If menu would go below viewport, show above cursor
     const spaceBelow = window.innerHeight - rangeRect.bottom;
     if (spaceBelow < menuHeight && rangeRect.top > menuHeight) {
-      if (containerRect) {
-        top = rangeRect.top - containerRect.top - menuHeight - 8;
-      } else {
-        top = rangeRect.top + window.scrollY - menuHeight - 8;
-      }
+      top = rangeRect.top - menuHeight - 8;
+    }
+    if (top < 10) top = 10;
+    if (top + menuHeight > window.innerHeight - 10) {
+      top = window.innerHeight - menuHeight - 10;
     }
 
     this.slashMenuPosition = {
@@ -322,7 +370,6 @@ export class BlockEditorComponent implements OnInit, OnChanges, OnDestroy {
       left: left,
     };
 
-    this.slashMenuFilter = '';
     this.slashMenuSelectedIndex = 0;
     this.filteredBlockTypes = [...this.blockTypes];
     this.showSlashMenu = true;
@@ -343,50 +390,34 @@ export class BlockEditorComponent implements OnInit, OnChanges, OnDestroy {
 
   updateMenuPosition(): void {
     if (!this.slashRange || !this.showSlashMenu) return;
+    const rangeRect = this.getRangeRect(this.slashRange);
 
-    const selection = window.getSelection();
-    if (selection) {
-      selection.removeAllRanges();
-      selection.addRange(this.slashRange);
+    let top: number;
+    let left: number;
+    top = rangeRect.bottom + 8;
+    left = rangeRect.left;
 
-      const rangeRect = this.slashRange.getBoundingClientRect();
-      const editorContainer = document.querySelector(
-        '.page-canvas, .canvas-editor',
-      );
-      const containerRect = editorContainer?.getBoundingClientRect();
+    const menuWidth = 320;
+    const menuHeight = 400;
 
-      let top: number;
-      let left: number;
-
-      if (containerRect) {
-        top = rangeRect.bottom - containerRect.top + 8;
-        left = rangeRect.left - containerRect.left;
-      } else {
-        top = rangeRect.bottom + window.scrollY + 8;
-        left = rangeRect.left + window.scrollX;
-      }
-
-      const menuWidth = 320;
-      const menuHeight = 400;
-
-      if (containerRect && left + menuWidth > containerRect.width) {
-        left = containerRect.width - menuWidth - 20;
-      }
-
-      const spaceBelow = window.innerHeight - rangeRect.bottom;
-      if (spaceBelow < menuHeight && rangeRect.top > menuHeight) {
-        if (containerRect) {
-          top = rangeRect.top - containerRect.top - menuHeight - 8;
-        } else {
-          top = rangeRect.top + window.scrollY - menuHeight - 8;
-        }
-      }
-
-      this.slashMenuPosition = {
-        top: top,
-        left: left,
-      };
+    if (left + menuWidth > window.innerWidth - 10) {
+      left = window.innerWidth - menuWidth - 10;
     }
+    if (left < 10) left = 10;
+
+    const spaceBelow = window.innerHeight - rangeRect.bottom;
+    if (spaceBelow < menuHeight && rangeRect.top > menuHeight) {
+      top = rangeRect.top - menuHeight - 8;
+    }
+    if (top < 10) top = 10;
+    if (top + menuHeight > window.innerHeight - 10) {
+      top = window.innerHeight - menuHeight - 10;
+    }
+
+    this.slashMenuPosition = {
+      top: top,
+      left: left,
+    };
   }
 
   handleSlashMenuKeyboard(event: KeyboardEvent): void {
@@ -412,7 +443,7 @@ export class BlockEditorComponent implements OnInit, OnChanges, OnDestroy {
         event.preventDefault();
         const selected = this.filteredBlockTypes[this.slashMenuSelectedIndex];
         if (selected) {
-          this.insertBlockType(selected.type, selected.level);
+          this.insertBlockType(selected.type, selected.level, selected.listStyle);
         }
         break;
 
@@ -422,45 +453,15 @@ export class BlockEditorComponent implements OnInit, OnChanges, OnDestroy {
         break;
 
       case 'Backspace':
-        if (this.slashMenuFilter.length > 0) {
-          event.preventDefault();
-          this.slashMenuFilter = this.slashMenuFilter.slice(0, -1);
-          this.updateSlashFilter();
-        } else {
-          // Close menu and let backspace delete the /
-          this.closeSlashMenu(false);
-        }
-        break;
-
-      case ' ':
-        // Space closes menu
-        event.preventDefault();
-        this.closeSlashMenu(true);
+        // Close menu and let backspace delete the /
+        this.closeSlashMenu(false);
         break;
 
       default:
+        // No search mode in slash menu; close and continue typing.
         if (event.key.length === 1 && !event.ctrlKey && !event.metaKey) {
-          event.preventDefault();
-          this.slashMenuFilter += event.key;
-          this.updateSlashFilter();
+          this.closeSlashMenu(true);
         }
-    }
-  }
-  updateSlashFilter(): void {
-    const query = this.slashMenuFilter.toLowerCase();
-
-    this.filteredBlockTypes = this.blockTypes.filter(
-      (bt) =>
-        bt.label.toLowerCase().includes(query) ||
-        bt.description.toLowerCase().includes(query) ||
-        bt.type.toLowerCase().includes(query),
-    );
-
-    this.slashMenuSelectedIndex = 0;
-
-    // If no matches, close menu
-    if (this.filteredBlockTypes.length === 0) {
-      this.closeSlashMenu(true);
     }
   }
 
@@ -499,7 +500,18 @@ export class BlockEditorComponent implements OnInit, OnChanges, OnDestroy {
     }, 100);
   }
 
-  insertBlockType(type: BlockType, level?: number): void {
+  insertBlockType(
+    type: BlockType,
+    level?: number,
+    listStyle?: ListStyle,
+  ): void {
+    const listContent =
+      listStyle === 'bulleted'
+        ? '<ul><li></li></ul>'
+        : listStyle === 'numbered'
+          ? '<ol><li></li></ol>'
+          : '';
+
     // Remove the slash and any typed filter text
     if (this.slashRange) {
       const selection = window.getSelection();
@@ -549,7 +561,7 @@ export class BlockEditorComponent implements OnInit, OnChanges, OnDestroy {
         if (isEmpty) {
           activeBlock.type = type;
           if (level) activeBlock.level = level;
-          activeBlock.content = '';
+          activeBlock.content = listContent;
           this.savePage();
 
           // Focus the block
@@ -570,7 +582,7 @@ export class BlockEditorComponent implements OnInit, OnChanges, OnDestroy {
         const newBlock: ContentBlock = {
           id: 'block' + Date.now(),
           type: type,
-          content: '',
+          content: listContent,
           order: activeBlock.order + 1,
         };
 
@@ -622,7 +634,6 @@ export class BlockEditorComponent implements OnInit, OnChanges, OnDestroy {
     }
 
     this.showSlashMenu = false;
-    this.slashMenuFilter = '';
     this.slashRange = null;
   }
 
@@ -742,6 +753,11 @@ export class BlockEditorComponent implements OnInit, OnChanges, OnDestroy {
   }
 
   savePage(): void {
+    if (this.saveTimeout) {
+      clearTimeout(this.saveTimeout);
+      this.saveTimeout = null;
+    }
+
     if (this.page) {
       const updatedPage: Partial<Page> = {
         title: this.pageTitle,
@@ -749,7 +765,9 @@ export class BlockEditorComponent implements OnInit, OnChanges, OnDestroy {
           blocks: this.blocks.map((block) => ({
             id: block.id,
             type: block.type,
-            content: block.content,
+            content: this.pendingBlockContent.has(block.id)
+              ? this.pendingBlockContent.get(block.id)
+              : block.content,
             order: block.order,
             level: block.level,
             imageUrl: block.imageUrl,
@@ -769,6 +787,16 @@ export class BlockEditorComponent implements OnInit, OnChanges, OnDestroy {
     }
   }
 
+  private debouncedSavePage(): void {
+    if (this.saveTimeout) {
+      clearTimeout(this.saveTimeout);
+    }
+
+    this.saveTimeout = setTimeout(() => {
+      this.savePage();
+    }, this.saveDebounceMs);
+  }
+
   private normalizeEditableHtml(html: string): string {
     const normalized = html.replace(/\u00a0/g, ' ').trim();
 
@@ -781,5 +809,51 @@ export class BlockEditorComponent implements OnInit, OnChanges, OnDestroy {
     }
 
     return normalized;
+  }
+
+  private shouldOpenSlashMenu(range: Range): boolean {
+    const editable = this.findEditableContainer(range);
+    if (!editable) return false;
+    // Open only when slash is typed as the very first character of a block.
+    return this.getCaretOffsetWithin(editable, range) === 0;
+  }
+
+  private findEditableContainer(range: Range): HTMLElement | null {
+    const startNode = range.startContainer as Node;
+    const element =
+      startNode.nodeType === Node.ELEMENT_NODE
+        ? (startNode as HTMLElement)
+        : startNode.parentElement;
+    if (!element) return null;
+    return element.closest('[data-block-id]') as HTMLElement | null;
+  }
+
+  private getCaretOffsetWithin(container: HTMLElement, range: Range): number {
+    const preRange = range.cloneRange();
+    preRange.selectNodeContents(container);
+    preRange.setEnd(range.startContainer, range.startOffset);
+    return (preRange.toString() || '').length;
+  }
+
+  private getRangeRect(range: Range): DOMRect {
+    const rect = range.getBoundingClientRect();
+    if (rect.width !== 0 || rect.height !== 0) {
+      return rect;
+    }
+
+    // For collapsed/empty caret positions where rect can be zero, use marker span.
+    const marker = document.createElement('span');
+    marker.textContent = '\u200b';
+    marker.style.position = 'relative';
+    marker.style.display = 'inline-block';
+    marker.style.width = '0';
+    marker.style.overflow = 'hidden';
+
+    const tempRange = range.cloneRange();
+    tempRange.insertNode(marker);
+    const markerRect = marker.getBoundingClientRect();
+    marker.remove();
+
+    return markerRect;
   }
 }
