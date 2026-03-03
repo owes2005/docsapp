@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject, Observable, throwError } from 'rxjs';
 import { tap, catchError } from 'rxjs/operators';
+import { switchMap } from 'rxjs/operators';
 import { Document, Folder, Project } from '../models/document.model';
 
 @Injectable({
@@ -59,7 +60,32 @@ export class DocumentService {
   }
 
   deleteFolder(id: string): Observable<void> {
-    return this.http.delete<void>(`${this.apiUrl}/folders/${id}`).pipe(
+    return this.http
+      .get<Document[]>(`${this.apiUrl}/documents?folderId=${id}`)
+      .pipe(
+        switchMap((docs) => {
+          if (docs.length > 0) {
+            return throwError(
+              () =>
+                new Error(
+                  'Cannot delete folder. Delete documents in this folder first.'
+                )
+            );
+          }
+
+          return this.http.delete<void>(`${this.apiUrl}/folders/${id}`);
+        }),
+      tap(() => {
+        this.getFolders().subscribe();
+      }),
+      catchError(this.handleError)
+    );
+  }
+
+  renameFolder(id: string, name: string): Observable<Folder> {
+    return this.http.patch<Folder>(`${this.apiUrl}/folders/${id}`, {
+      name: name
+    }).pipe(
       tap(() => this.getFolders().subscribe()),
       catchError(this.handleError)
     );
@@ -155,6 +181,15 @@ export class DocumentService {
 
   private handleError(error: any): Observable<never> {
     console.error('Service Error:', error);
-    return throwError(() => new Error('Something went wrong'));
+    if (error instanceof Error && error.message) {
+      return throwError(() => error);
+    }
+
+    const serverMessage =
+      (typeof error?.error === 'string' && error.error) ||
+      error?.error?.message ||
+      error?.message;
+
+    return throwError(() => new Error(serverMessage || 'Something went wrong'));
   }
 }

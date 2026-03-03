@@ -381,6 +381,18 @@
   white-space: nowrap;
 }
 
+.folder-rename-input {
+  width: 100%;
+  font-size: 14px;
+  font-weight: 600;
+  color: #111827;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  padding: 2px 6px;
+  outline: none;
+  background: #ffffff;
+}
+
 .folder-card-meta {
   font-size: 11px;
   color: #9ca3af;

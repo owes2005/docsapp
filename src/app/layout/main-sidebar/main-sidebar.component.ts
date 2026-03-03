@@ -36,9 +36,23 @@ export class MainSidebarComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    this.documentService.getProjects().subscribe(p => this.projects = p);
-    this.documentService.getFolders().subscribe(f => this.folders = f);
-    this.documentService.getDocuments().subscribe(d => this.documents = d);
+    this.documentService.projects$.subscribe(p => {
+      this.projects = p;
+      this.updateActiveState(this.router.url);
+    });
+    this.documentService.folders$.subscribe(f => {
+      this.folders = f;
+      this.updateActiveState(this.router.url);
+    });
+    this.documentService.documents$.subscribe(d => {
+      this.documents = d;
+      this.updateActiveState(this.router.url);
+    });
+
+    // Initial data fetch to populate the reactive streams.
+    this.documentService.getProjects().subscribe();
+    this.documentService.getFolders().subscribe();
+    this.documentService.getDocuments().subscribe();
 
     // Track active route
     this.router.events.pipe(
@@ -187,7 +201,6 @@ export class MainSidebarComponent implements OnInit {
         this.newFolderName.trim(),
         projectId
       ).subscribe(folder => {
-        this.folders = [...this.folders, folder];
         this.expandedFolders.add(folder.id);
       });
     }
@@ -234,7 +247,6 @@ export class MainSidebarComponent implements OnInit {
         updatedAt: new Date().toISOString()
       };
       this.documentService.createDocument(newDoc).subscribe(doc => {
-        this.documents = [...this.documents, doc];
         this.router.navigate(['/document', doc.id]);
       });
     }

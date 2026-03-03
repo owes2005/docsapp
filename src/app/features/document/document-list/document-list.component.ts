@@ -19,6 +19,8 @@ export class DocumentListComponent implements OnInit {
   activeFilter = 'recent';
   renamingDocId: string | number | null = null;
   renamingTitle = '';
+  renamingFolderId: string | number | null = null;
+  renamingFolderName = '';
   showNewFolderInput = false;
   newFolderName = '';
 
@@ -214,9 +216,51 @@ deleteDocument(event: Event, id: string): void {
   deleteFolder(event: Event, id: string): void {
   event.stopPropagation();
   if (confirm('Delete this folder?')) {
-    this.documentService.deleteFolder(String(id)).subscribe();
+    this.documentService.deleteFolder(String(id)).subscribe({
+      error: (err) => {
+        alert(err?.message || 'Delete documents in this folder first.');
+      }
+    });
   }
 }
+
+  startFolderRename(event: Event, folder: Folder): void {
+    event.stopPropagation();
+    this.renamingFolderId = folder.id;
+    this.renamingFolderName = folder.name;
+    setTimeout(() => {
+      const input = document.getElementById('folder-rename-input-' + folder.id);
+      if (input) {
+        input.focus();
+        (input as HTMLInputElement).select();
+      }
+    }, 100);
+  }
+
+  saveFolderRename(folder: Folder): void {
+    if (
+      this.renamingFolderName.trim() &&
+      this.renamingFolderName.trim() !== folder.name
+    ) {
+      this.documentService
+        .renameFolder(String(folder.id), this.renamingFolderName.trim())
+        .subscribe();
+    }
+    this.cancelFolderRename();
+  }
+
+  cancelFolderRename(): void {
+    this.renamingFolderId = null;
+    this.renamingFolderName = '';
+  }
+
+  onFolderRenameKeydown(event: KeyboardEvent, folder: Folder): void {
+    if (event.key === 'Enter') {
+      this.saveFolderRename(folder);
+    } else if (event.key === 'Escape') {
+      this.cancelFolderRename();
+    }
+  }
 
   getFolderName(folderId: string | number | null | undefined, folders: Folder[]): string {
     if (!folderId) return 'My docs';

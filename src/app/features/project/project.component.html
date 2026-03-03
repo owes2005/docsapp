@@ -83,13 +83,30 @@
               <mat-icon>folder</mat-icon>
             </div>
             <div class="folder-card-info">
-              <span class="folder-card-name">{{ folder.name }}</span>
+              <input
+                *ngIf="renamingFolderId === folder.id"
+                [id]="'folder-rename-input-' + folder.id"
+                class="folder-rename-input"
+                type="text"
+                [(ngModel)]="renamingFolderName"
+                (blur)="saveRenameFolder(folder)"
+                (keydown)="onRenameFolderKeydown($event, folder)"
+                (click)="$event.stopPropagation()"
+              />
+              <span class="folder-card-name" *ngIf="renamingFolderId !== folder.id">{{ folder.name }}</span>
               <span class="folder-card-count">
                 {{ getDocsForFolder(folder.id).length }} documents
               </span>
             </div>
           </div>
           <div class="folder-card-actions">
+            <button
+              class="icon-btn"
+              matTooltip="Rename folder"
+              (click)="startRenameFolder(folder)"
+            >
+              <mat-icon>drive_file_rename_outline</mat-icon>
+            </button>
             <button
               class="icon-btn"
               matTooltip="Add document"

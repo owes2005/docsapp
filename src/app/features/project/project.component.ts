@@ -131,12 +131,54 @@ export class ProjectComponent implements OnInit {
   }
 
   deleteFolder(folderId: string): void {
-    if (confirm('Delete this folder and all its documents?')) {
-      this.documentService.deleteFolder(folderId).subscribe(() => {
-        this.folders = this.folders.filter((f) => f.id !== folderId);
-        this.documents = this.documents.filter((d) => d.folderId !== folderId);
+    if (confirm('Delete this folder?')) {
+      this.documentService.deleteFolder(folderId).subscribe({
+        next: () => {
+          this.folders = this.folders.filter((f) => f.id !== folderId);
+        },
+        error: (err) => {
+          alert(err?.message || 'Delete documents in this folder first.');
+        }
       });
     }
+  }
+
+  startRenameFolder(folder: Folder): void {
+    this.renamingFolderId = folder.id;
+    this.renamingFolderName = folder.name;
+    setTimeout(() => {
+      const input = document.getElementById('folder-rename-input-' + folder.id);
+      if (input) {
+        input.focus();
+        (input as HTMLInputElement).select();
+      }
+    }, 100);
+  }
+
+  saveRenameFolder(folder: Folder): void {
+    if (
+      this.renamingFolderName.trim() &&
+      this.renamingFolderName.trim() !== folder.name
+    ) {
+      this.documentService
+        .renameFolder(folder.id, this.renamingFolderName.trim())
+        .subscribe((updatedFolder) => {
+          this.folders = this.folders.map((f) =>
+            f.id === updatedFolder.id ? updatedFolder : f
+          );
+        });
+    }
+    this.cancelRenameFolder();
+  }
+
+  cancelRenameFolder(): void {
+    this.renamingFolderId = null;
+    this.renamingFolderName = '';
+  }
+
+  onRenameFolderKeydown(event: KeyboardEvent, folder: Folder): void {
+    if (event.key === 'Enter') this.saveRenameFolder(folder);
+    if (event.key === 'Escape') this.cancelRenameFolder();
   }
 
   // ===== DOCUMENT ACTIONS =====

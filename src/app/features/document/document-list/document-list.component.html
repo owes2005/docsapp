@@ -92,7 +92,15 @@
               </div>
 
               <div class="folder-card-info">
-                <span class="folder-card-name">{{folder.name}}</span>
+                <input *ngIf="renamingFolderId === folder.id"
+                       [id]="'folder-rename-input-' + folder.id"
+                       class="folder-rename-input"
+                       type="text"
+                       [(ngModel)]="renamingFolderName"
+                       (blur)="saveFolderRename(folder)"
+                       (keydown)="onFolderRenameKeydown($event, folder)"
+                       (click)="$event.stopPropagation()">
+                <span class="folder-card-name" *ngIf="renamingFolderId !== folder.id">{{folder.name}}</span>
                 <span class="folder-card-meta">Folder</span>
               </div>
 
@@ -103,6 +111,11 @@
               </button>
 
               <mat-menu #folderMenu="matMenu">
+                <button mat-menu-item (click)="startFolderRename($event, folder)">
+                  <mat-icon>drive_file_rename_outline</mat-icon>
+                  <span>Rename folder</span>
+                </button>
+                <mat-divider></mat-divider>
                 <button mat-menu-item (click)="deleteFolder($event, folder.id)">
                   <mat-icon>delete_outline</mat-icon>
                   <span>Delete folder</span>
