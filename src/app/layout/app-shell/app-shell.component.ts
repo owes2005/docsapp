@@ -914,6 +914,21 @@ export class AppShellComponent implements OnInit {
         if (parsedBg) next.backgroundColor = parsedBg;
       }
 
+      // Fallback to computed styles so pasted/class-based colors are preserved in export.
+      const computedStyle = window.getComputedStyle(el);
+      if (!next.color && computedStyle?.color) {
+        const computedColor = this.parseCssColor(computedStyle.color);
+        if (computedColor) {
+          next.color = computedColor;
+        }
+      }
+      if (!next.backgroundColor && computedStyle?.backgroundColor) {
+        const computedBg = this.parseCssColor(computedStyle.backgroundColor);
+        if (computedBg) {
+          next.backgroundColor = computedBg;
+        }
+      }
+
       const isBlock = ['div', 'p', 'li', 'ul', 'ol', 'blockquote', 'pre', 'h1', 'h2', 'h3'].includes(tag);
       if (isBlock && tag !== 'li' && runs.length > 0 && !runs[runs.length - 1].text.endsWith('\n')) {
         runs.push({ text: '\n', ...next });
@@ -991,14 +1006,25 @@ export class AppShellComponent implements OnInit {
     if (!input) {
       return '';
     }
+    const container = document.createElement('div');
+    container.innerHTML = input;
 
-    return input
-      // Remove contenteditable wrappers accidentally saved from editor nodes.
-      .replace(/<h[1-6][^>]*>/gi, '')
-      .replace(/<\/h[1-6]>/gi, '')
-      .replace(/<div[^>]*>/gi, '<div>')
-      .replace(/<p[^>]*>/gi, '<p>')
-      .replace(/<span[^>]*class="[^"]*ng-star-inserted[^"]*"[^>]*>/gi, '<span>');
+    container.querySelectorAll('*').forEach((el) => {
+      // Remove editor/runtime attributes but preserve inline style/color markup.
+      el.removeAttribute('contenteditable');
+      el.removeAttribute('data-placeholder');
+      el.removeAttribute('data-empty');
+      el.removeAttribute('ng-reflect-ng-if');
+
+      if (el.classList.contains('ng-star-inserted')) {
+        el.classList.remove('ng-star-inserted');
+      }
+      if (!el.className || !el.className.trim()) {
+        el.removeAttribute('class');
+      }
+    });
+
+    return container.innerHTML;
   }
 
   private getSafeFilename(input: string): string {
