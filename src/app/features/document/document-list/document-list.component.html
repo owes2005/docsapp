@@ -1,5 +1,4 @@
 <div class="document-list-page">
-
   <!-- Local Sidebar Header (visible when global sidebar is hidden on /documents) -->
   <div class="list-top-panel">
     <div class="list-top-main-row">
@@ -13,20 +12,32 @@
             <span class="list-brand-tagline">Document workspace</span>
           </div>
         </div>
-        <button class="list-notification-btn" mat-icon-button matTooltip="Notifications">
+        <button
+          class="list-notification-btn"
+          mat-icon-button
+          matTooltip="Notifications"
+        >
           <mat-icon>notifications_none</mat-icon>
         </button>
       </div>
 
-      <div class="search-wrapper list-search-wrapper" *ngIf="activeFilter !== 'projects'">
+      <div
+        class="search-wrapper list-search-wrapper"
+        *ngIf="activeFilter !== 'projects'"
+      >
         <mat-icon class="search-icon">search</mat-icon>
         <input
           class="search-input"
           type="text"
           placeholder="Search all docs..."
           [(ngModel)]="searchQuery"
-          (input)="onSearch()">
-        <button class="clear-search" *ngIf="searchQuery" (click)="clearSearch()">
+          (input)="onSearch()"
+        />
+        <button
+          class="clear-search"
+          *ngIf="searchQuery"
+          (click)="clearSearch()"
+        >
           <mat-icon>close</mat-icon>
         </button>
       </div>
@@ -48,89 +59,89 @@
 
   <!-- Filter Tabs -->
   <div class="filter-tabs">
-    <button class="filter-tab" [class.active]="activeFilter === 'projects'" (click)="setFilter('projects')">
+    <button
+      class="filter-tab"
+      [class.active]="activeFilter === 'projects'"
+      (click)="setFilter('projects')"
+    >
       Projects
     </button>
-    <button class="filter-tab" [class.active]="activeFilter === 'recent'" (click)="setFilter('recent')">
+    <button
+      class="filter-tab"
+      [class.active]="activeFilter === 'recent'"
+      (click)="setFilter('recent')"
+    >
       Recent
     </button>
-    <button class="filter-tab" [class.active]="activeFilter === 'favorites'" (click)="setFilter('favorites')">
+    <button
+      class="filter-tab"
+      [class.active]="activeFilter === 'favorites'"
+      (click)="setFilter('favorites')"
+    >
       Favorites
     </button>
-    <button class="filter-tab" [class.active]="activeFilter === 'owned'" (click)="setFilter('owned')">
+    <button
+      class="filter-tab"
+      [class.active]="activeFilter === 'owned'"
+      (click)="setFilter('owned')"
+    >
       Owned by me
     </button>
     <div class="tab-spacer"></div>
     <span class="results-count" *ngIf="searchQuery">
-      {{(filteredDocuments$ | async)?.length}} results
+      {{ (filteredDocuments$ | async)?.length }} results
     </span>
   </div>
 
   <!-- Scrollable Content -->
   <div class="page-content">
-
     <!-- Folders Section -->
     <ng-container *ngIf="activeFilter === 'recent' && !searchQuery">
       <div class="section">
-
-        <div class="section-header">
-          <span class="section-label">Folders</span>
-          <!--<button class="new-folder-btn" (click)="showCreateFolder()">
-            <mat-icon>create_new_folder</mat-icon>
-            New folder
-          </button>-->
-        </div>
-
-        <!-- New Folder Input 
-        <div class="new-folder-input-row" *ngIf="showNewFolderInput">
-          <mat-icon class="folder-input-icon">folder</mat-icon>
-          <input
-            id="new-folder-input"
-            class="folder-name-input"
-            type="text"
-            placeholder="Folder name..."
-            [(ngModel)]="newFolderName"
-            (keydown)="onFolderKeydown($event)">
-          <button class="icon-btn confirm" (click)="createFolder()" matTooltip="Create">
-            <mat-icon>check</mat-icon>
-          </button>
-          <button class="icon-btn cancel" (click)="cancelCreateFolder()" matTooltip="Cancel">
-            <mat-icon>close</mat-icon>
-          </button>
-        </div>-->
-
         <!-- Folders Grid -->
         <ng-container *ngIf="folders$ | async as folderList">
-
           <div class="folders-grid" *ngIf="folderList.length > 0">
-            <div class="folder-card"
-                 *ngFor="let folder of folderList"
-                 (click)="openFolder(folder)">
+            <div
+              class="folder-card"
+              *ngFor="let folder of folderList"
+              (click)="openFolder(folder)"
+            >
               <div class="folder-card-icon">
                 <mat-icon>folder</mat-icon>
               </div>
 
               <div class="folder-card-info">
-                <input *ngIf="renamingFolderId === folder.id"
-                       [id]="'folder-rename-input-' + folder.id"
-                       class="folder-rename-input"
-                       type="text"
-                       [(ngModel)]="renamingFolderName"
-                       (blur)="saveFolderRename(folder)"
-                       (keydown)="onFolderRenameKeydown($event, folder)"
-                       (click)="$event.stopPropagation()">
-                <span class="folder-card-name" *ngIf="renamingFolderId !== folder.id">{{folder.name}}</span>
+                <input
+                  *ngIf="renamingFolderId === folder.id"
+                  [id]="'folder-rename-input-' + folder.id"
+                  class="folder-rename-input"
+                  type="text"
+                  [(ngModel)]="renamingFolderName"
+                  (blur)="saveFolderRename(folder)"
+                  (keydown)="onFolderRenameKeydown($event, folder)"
+                  (click)="$event.stopPropagation()"
+                />
+                <span
+                  class="folder-card-name"
+                  *ngIf="renamingFolderId !== folder.id"
+                  >{{ folder.name }}</span
+                >
                 <span class="folder-card-meta">Folder</span>
               </div>
 
-              <button class="folder-more-btn"
-                      [matMenuTriggerFor]="folderMenu"
-                      (click)="$event.stopPropagation()">
+              <button
+                class="folder-more-btn"
+                [matMenuTriggerFor]="folderMenu"
+                (click)="$event.stopPropagation()"
+              >
                 <mat-icon>more_horiz</mat-icon>
               </button>
 
               <mat-menu #folderMenu="matMenu">
-                <button mat-menu-item (click)="startFolderRename($event, folder)">
+                <button
+                  mat-menu-item
+                  (click)="startFolderRename($event, folder)"
+                >
                   <mat-icon>drive_file_rename_outline</mat-icon>
                   <span>Rename folder</span>
                 </button>
@@ -144,12 +155,18 @@
           </div>
 
           <!-- Empty Folders -->
-          <div class="empty-folders" *ngIf="folderList.length === 0 && !showNewFolderInput">
-            <p>No folders yet. <button class="text-btn" (click)="showCreateFolder()">Create one</button></p>
+          <div
+            class="empty-folders"
+            *ngIf="folderList.length === 0 && !showNewFolderInput"
+          >
+            <p>
+              No folders yet.
+              <button class="text-btn" (click)="showCreateFolder()">
+                Create one
+              </button>
+            </p>
           </div>
-
         </ng-container>
-
       </div>
 
       <div class="section-divider"></div>
@@ -164,116 +181,169 @@
 
         <ng-container *ngIf="projects$ | async as projectList">
           <div class="projects-grid" *ngIf="projectList.length > 0">
-            <button class="project-card"
-                    *ngFor="let project of projectList"
-                    [class.active]="selectedProjectId === project.id"
-                    (click)="openProject(project)">
+            <button
+              class="project-card"
+              *ngFor="let project of projectList"
+              [class.active]="selectedProjectId === project.id"
+              (click)="openProject(project)"
+            >
               <span class="project-icon" [style.background]="project.color">
-                {{project.icon}}
+                {{ project.icon }}
               </span>
-              <span class="project-name">{{project.name}}</span>
+              <span class="project-name">{{ project.name }}</span>
             </button>
           </div>
         </ng-container>
       </div>
-
-      
     </ng-container>
 
     <!-- Documents Section -->
     <div class="section" *ngIf="activeFilter !== 'projects'">
-
-      <div class="section-header" *ngIf="!searchQuery && activeFilter === 'recent'">
+      <div
+        class="section-header"
+        *ngIf="!searchQuery && activeFilter === 'recent'"
+      >
         <span class="section-label">Documents</span>
       </div>
 
       <!-- Document List -->
       <ng-container *ngIf="folders$ | async as folders">
         <ng-container *ngIf="projects$ | async as projects">
-        <div class="doc-row"
-             *ngFor="let doc of filteredDocuments$ | async"
-             (click)="renamingDocId !== doc.id && openDocument(doc)">
+          <div
+            class="doc-row"
+            *ngFor="let doc of filteredDocuments$ | async"
+            (click)="renamingDocId !== doc.id && openDocument(doc)"
+          >
+            <!-- Icon -->
+            <div class="doc-emoji-icon">{{ doc.icon }}</div>
 
-          <!-- Icon -->
-          <div class="doc-emoji-icon">{{doc.icon}}</div>
+            <!-- Info -->
+            <div class="doc-info">
+              <input
+                *ngIf="renamingDocId === doc.id"
+                [id]="'rename-input-' + doc.id"
+                class="rename-input"
+                type="text"
+                [(ngModel)]="renamingTitle"
+                (blur)="saveRename(doc)"
+                (keydown)="onRenameKeydown($event, doc)"
+                (click)="$event.stopPropagation()"
+              />
 
-          <!-- Info -->
-          <div class="doc-info">
-            <input *ngIf="renamingDocId === doc.id"
-                   [id]="'rename-input-' + doc.id"
-                   class="rename-input"
-                   type="text"
-                   [(ngModel)]="renamingTitle"
-                   (blur)="saveRename(doc)"
-                   (keydown)="onRenameKeydown($event, doc)"
-                   (click)="$event.stopPropagation()">
+              <div class="doc-name" *ngIf="renamingDocId !== doc.id">
+                <span>{{ doc.title }}</span>
+                <mat-icon class="star-badge" *ngIf="doc.isFavorite"
+                  >star</mat-icon
+                >
+              </div>
 
-            <div class="doc-name" *ngIf="renamingDocId !== doc.id">
-              <span>{{doc.title}}</span>
-              <mat-icon class="star-badge" *ngIf="doc.isFavorite">star</mat-icon>
+              <div class="doc-meta">
+                <span class="doc-project">{{
+                  getProjectName(doc.projectId, projects)
+                }}</span>
+                <span class="dot">·</span>
+                <span class="doc-folder">{{
+                  getFolderName(doc.folderId, folders)
+                }}</span>
+                <span class="dot">·</span>
+                <span class="doc-date"
+                  >Updated {{ doc.updatedAt | date: "MMM d, y" }}</span
+                >
+              </div>
             </div>
 
-            <div class="doc-meta">
-              <span class="doc-project">{{getProjectName(doc.projectId, projects)}}</span>
-              <span class="dot">·</span>
-              <span class="doc-folder">{{getFolderName(doc.folderId, folders)}}</span>
-              <span class="dot">·</span>
-              <span class="doc-date">Updated {{doc.updatedAt | date:'MMM d, y'}}</span>
+            <!-- Actions -->
+            <div class="doc-actions" (click)="$event.stopPropagation()">
+              <button
+                class="action-btn"
+                [class.active-star]="doc.isFavorite"
+                (click)="toggleFavorite($event, doc)"
+                [matTooltip]="
+                  doc.isFavorite ? 'Remove favorite' : 'Add to favorites'
+                "
+              >
+                <mat-icon>{{
+                  doc.isFavorite ? "star" : "star_outline"
+                }}</mat-icon>
+              </button>
+              <button class="action-btn" [matMenuTriggerFor]="docMenu">
+                <mat-icon>more_horiz</mat-icon>
+              </button>
+              <mat-menu #docMenu="matMenu">
+                <button mat-menu-item (click)="openDocument(doc)">
+                  <mat-icon>open_in_new</mat-icon>
+                  <span>Open</span>
+                </button>
+                <button mat-menu-item (click)="startRename($event, doc)">
+                  <mat-icon>drive_file_rename_outline</mat-icon>
+                  <span>Rename</span>
+                </button>
+                <button mat-menu-item (click)="duplicateDocument($event, doc)">
+                  <mat-icon>content_copy</mat-icon>
+                  <span>Duplicate</span>
+                </button>
+                <button mat-menu-item (click)="toggleFavorite($event, doc)">
+                  <mat-icon>{{
+                    doc.isFavorite ? "star_outline" : "star"
+                  }}</mat-icon>
+                  <span>{{
+                    doc.isFavorite ? "Remove favorite" : "Add to favorites"
+                  }}</span>
+                </button>
+                <mat-divider></mat-divider>
+                <button
+                  mat-menu-item
+                  class="danger-item"
+                  (click)="deleteDocument($event, doc.id)"
+                >
+                  <mat-icon>delete_outline</mat-icon>
+                  <span>Delete</span>
+                </button>
+              </mat-menu>
             </div>
           </div>
-
-          <!-- Actions -->
-          <div class="doc-actions" (click)="$event.stopPropagation()">
-            <button class="action-btn"
-                    [class.active-star]="doc.isFavorite"
-                    (click)="toggleFavorite($event, doc)"
-                    [matTooltip]="doc.isFavorite ? 'Remove favorite' : 'Add to favorites'">
-              <mat-icon>{{doc.isFavorite ? 'star' : 'star_outline'}}</mat-icon>
-            </button>
-            <button class="action-btn" [matMenuTriggerFor]="docMenu">
-              <mat-icon>more_horiz</mat-icon>
-            </button>
-            <mat-menu #docMenu="matMenu">
-              <button mat-menu-item (click)="openDocument(doc)">
-                <mat-icon>open_in_new</mat-icon>
-                <span>Open</span>
-              </button>
-              <button mat-menu-item (click)="startRename($event, doc)">
-                <mat-icon>drive_file_rename_outline</mat-icon>
-                <span>Rename</span>
-              </button>
-              <button mat-menu-item (click)="duplicateDocument($event, doc)">
-                <mat-icon>content_copy</mat-icon>
-                <span>Duplicate</span>
-              </button>
-              <button mat-menu-item (click)="toggleFavorite($event, doc)">
-                <mat-icon>{{doc.isFavorite ? 'star_outline' : 'star'}}</mat-icon>
-                <span>{{doc.isFavorite ? 'Remove favorite' : 'Add to favorites'}}</span>
-              </button>
-              <mat-divider></mat-divider>
-              <button mat-menu-item class="danger-item" (click)="deleteDocument($event, doc.id)">
-                <mat-icon>delete_outline</mat-icon>
-                <span>Delete</span>
-              </button>
-            </mat-menu>
-          </div>
-
-        </div>
-      </ng-container>
+        </ng-container>
       </ng-container>
 
       <!-- Empty State -->
-      <div class="empty-state"
-           *ngIf="(filteredDocuments$ | async)?.length === 0">
+      <div
+        class="empty-state"
+        *ngIf="(filteredDocuments$ | async)?.length === 0"
+      >
         <div class="empty-illustration">
-          <mat-icon>{{searchQuery ? 'search_off' : activeFilter === 'favorites' ? 'star_outline' : activeFilter === 'projects' ? 'folder_open' : 'description'}}</mat-icon>
+          <mat-icon>{{
+            searchQuery
+              ? "search_off"
+              : activeFilter === "favorites"
+                ? "star_outline"
+                : activeFilter === "projects"
+                  ? "folder_open"
+                  : "description"
+          }}</mat-icon>
         </div>
-        <h3>{{searchQuery ? 'No results for "' + searchQuery + '"' : activeFilter === 'favorites' ? 'No favorites yet' : activeFilter === 'projects' ? 'No documents in this project' : 'No documents yet'}}</h3>
-        <p>{{searchQuery ? 'Try a different search term' : activeFilter === 'favorites' ? 'Star a document to see it here' : activeFilter === 'projects' ? 'Pick another project or create a new document' : 'Create your first document to get started'}}</p>
+        <h3>
+          {{
+            searchQuery
+              ? 'No results for "' + searchQuery + '"'
+              : activeFilter === "favorites"
+                ? "No favorites yet"
+                : activeFilter === "projects"
+                  ? "No documents in this project"
+                  : "No documents yet"
+          }}
+        </h3>
+        <p>
+          {{
+            searchQuery
+              ? "Try a different search term"
+              : activeFilter === "favorites"
+                ? "Star a document to see it here"
+                : activeFilter === "projects"
+                  ? "Pick another project or create a new document"
+                  : "Create your first document to get started"
+          }}
+        </p>
       </div>
-
     </div>
-
   </div>
-
 </div>
