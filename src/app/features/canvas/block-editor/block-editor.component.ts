@@ -1,10 +1,11 @@
-import { Component, Input, OnInit, OnChanges, OnDestroy } from '@angular/core';
+import { Component, Input, OnInit, OnChanges, OnDestroy, SecurityContext } from '@angular/core';
 import { CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-drop';
 import { Page, ContentBlock, BlockType } from 'src/app/core/models/page.model';
 import { PageService } from 'src/app/core/services/page.service';
 import { HttpClient } from '@angular/common/http';
 import { MatDialog } from '@angular/material/dialog';
 import { ImageViewerComponent } from 'src/app/shared/components/image-viewer/image-viewer.component';
+import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 
 type ListStyle = 'bulleted' | 'numbered';
 
@@ -40,6 +41,10 @@ export class BlockEditorComponent implements OnInit, OnChanges, OnDestroy {
   private scrollTimeout: any;
   private readonly saveDebounceMs = 400;
   private readonly scrollHandler = this.handleScroll.bind(this);
+  private trustedContentCache = new Map<
+    string,
+    { raw: string; safe: SafeHtml }
+  >();
 
   blockTypes: BlockMenuItem[] = [
     {
@@ -116,6 +121,7 @@ export class BlockEditorComponent implements OnInit, OnChanges, OnDestroy {
     private http: HttpClient,
     private dialog: MatDialog,
     private pageService: PageService,
+    private sanitizer: DomSanitizer,
   ) {}
 
   ngOnInit(): void {
@@ -154,6 +160,20 @@ export class BlockEditorComponent implements OnInit, OnChanges, OnDestroy {
     // Sort blocks by order
     this.blocks.sort((a, b) => a.order - b.order);
     this.pendingBlockContent.clear();
+    this.trustedContentCache.clear();
+  }
+
+  getTrustedBlockContent(block: ContentBlock): SafeHtml {
+    const raw = typeof block.content === 'string' ? block.content : '';
+    const cached = this.trustedContentCache.get(block.id);
+    if (cached && cached.raw === raw) {
+      return cached.safe;
+    }
+
+    const clean = this.sanitizer.sanitize(SecurityContext.HTML, raw) || '';
+    const safe = this.sanitizer.bypassSecurityTrustHtml(clean);
+    this.trustedContentCache.set(block.id, { raw, safe });
+    return safe;
   }
 
   updatePageTitle(event: any): void {
