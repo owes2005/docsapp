@@ -73,7 +73,7 @@ export class TextToolbarComponent implements OnInit, OnDestroy {
       left = window.innerWidth - toolbarWidth - viewportPadding;
     }
 
-    // Calculate vertical position
+     // Calculate vertical position
     // rect.top and rect.bottom are relative to viewport
     const selectionTopInViewport = rect.top;
     const selectionBottomInViewport = rect.bottom;
