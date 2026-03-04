@@ -91,6 +91,10 @@ export class AppShellComponent implements OnInit {
     return this.currentRoute.includes('/document/');
   }
 
+  isDocumentsList(): boolean {
+    return this.currentRoute.startsWith('/documents');
+  }
+
   async exportDocumentPdf(): Promise<void> {
     if (!this.currentDocId) {
       alert('No active document found to export.');

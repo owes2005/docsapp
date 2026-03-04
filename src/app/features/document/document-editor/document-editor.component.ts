@@ -16,6 +16,7 @@ export class DocumentEditorComponent implements OnInit {
   document: Document | null = null;
   pages: Page[] = [];
   selectedPage: Page | null = null;
+  currentDocumentId: string | null = null;
   renamingPageId: string | null = null;
   renamingPageTitle = '';
   sidebarOpen = true; // ADD THIS
@@ -30,6 +31,10 @@ export class DocumentEditorComponent implements OnInit {
   ngOnInit(): void {
     this.route.params.subscribe(params => {
       const documentId = params['documentId'];
+      this.currentDocumentId = documentId;
+      this.document = null;
+      this.pages = [];
+      this.selectedPage = null;
       this.loadDocument(documentId);
       this.loadPages(documentId);
     });
@@ -37,15 +42,19 @@ export class DocumentEditorComponent implements OnInit {
 
   loadDocument(documentId: string): void {
     this.documentService.getDocument(documentId).subscribe(doc => {
+      if (this.currentDocumentId !== documentId) return;
       this.document = doc;
     });
   }
 
   loadPages(documentId: string): void {
     this.pageService.getPagesByDocument(documentId).subscribe(pages => {
+      if (this.currentDocumentId !== documentId) return;
       this.pages = pages.sort((a, b) => a.order - b.order);
-      if (this.pages.length > 0 && !this.selectedPage) {
+      if (this.pages.length > 0) {
         this.selectPage(this.pages[0]);
+      } else {
+        this.selectedPage = null;
       }
     });
   }

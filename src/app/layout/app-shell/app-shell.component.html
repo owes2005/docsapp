@@ -33,7 +33,9 @@
   <div class="main-layout" [class.no-toolbar]="!isDocumentEditor()">
     
     <!-- Main Navigation Sidebar -->
-    <aside class="sidebar-container" [class.collapsed]="!showMainSidebar">
+    <aside class="sidebar-container"
+           *ngIf="!isDocumentsList()"
+           [class.collapsed]="!showMainSidebar">
       <app-main-sidebar class="main-sidebar"></app-main-sidebar>
     </aside>
 

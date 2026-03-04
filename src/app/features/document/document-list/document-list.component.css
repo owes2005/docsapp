@@ -8,6 +8,140 @@
   overflow: hidden;
 }
 
+/* ===== LOCAL TOP PANEL ===== */
+.list-top-panel {
+  padding: 14px 16px 10px 16px;
+  border-bottom: 1px solid #edf1f6;
+  background: linear-gradient(180deg, #f8fbff 0%, #ffffff 100%);
+  flex-shrink: 0;
+}
+
+.list-top-main-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.list-brand-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border: 1px solid #e1e6ee;
+  border-radius: 12px;
+  background: #ffffff;
+  padding: 12px 14px;
+}
+
+.list-brand-card.compact {
+  width: 360px;
+  min-width: 320px;
+}
+
+.list-brand-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.list-brand-mark {
+  width: 46px;
+  height: 46px;
+  border-radius: 12px;
+  background: #0f172a;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.list-brand-mark mat-icon {
+  font-size: 22px;
+  width: 22px;
+  height: 22px;
+}
+
+.list-brand-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.list-brand-name {
+  font-size: 20px;
+  line-height: 1.05;
+  font-weight: 700;
+  letter-spacing: -0.2px;
+  color: #0f172a;
+}
+
+.list-brand-tagline {
+  font-size: 12px;
+  color: #64748b;
+}
+
+.list-notification-btn {
+  color: #64748b;
+}
+
+.list-search-wrapper {
+  width: min(56vw, 620px);
+  min-width: 280px;
+  max-width: 620px;
+  margin-left: auto;
+}
+
+.list-workspace-btn {
+  width: 100%;
+  margin-top: 10px;
+  height: 50px;
+  border: 1px solid #dbe3ee;
+  border-radius: 10px;
+  background: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 14px;
+  font-size: 15px;
+  font-weight: 700;
+  color: #0f172a;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.list-workspace-btn:hover {
+  background: #f8fafc;
+  border-color: #cfd9e6;
+}
+
+.list-workspace-btn mat-icon {
+  color: #94a3b8;
+}
+
+@media (max-width: 768px) {
+  .list-top-panel {
+    padding: 12px 12px 8px 12px;
+  }
+
+  .list-top-main-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .list-brand-card.compact {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .list-brand-card {
+    padding: 10px 12px;
+  }
+
+  .list-brand-name {
+    font-size: 18px;
+  }
+}
+
 /* ===== SEARCH HEADER ===== */
 .search-header {
   padding: 16px 32px;

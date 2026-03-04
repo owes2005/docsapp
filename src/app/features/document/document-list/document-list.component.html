@@ -1,19 +1,41 @@
 <div class="document-list-page">
 
-  <!-- Search Header -->
-  <div class="search-header">
-    <div class="search-wrapper">
-      <mat-icon class="search-icon">search</mat-icon>
-      <input
-        class="search-input"
-        type="text"
-        placeholder="Search all docs..."
-        [(ngModel)]="searchQuery"
-        (input)="onSearch()">
-      <button class="clear-search" *ngIf="searchQuery" (click)="clearSearch()">
-        <mat-icon>close</mat-icon>
-      </button>
+  <!-- Local Sidebar Header (visible when global sidebar is hidden on /documents) -->
+  <div class="list-top-panel">
+    <div class="list-top-main-row">
+      <div class="list-brand-card compact">
+        <div class="list-brand-left">
+          <div class="list-brand-mark">
+            <mat-icon>edit_note</mat-icon>
+          </div>
+          <div class="list-brand-text">
+            <span class="list-brand-name">DocsApp</span>
+            <span class="list-brand-tagline">Document workspace</span>
+          </div>
+        </div>
+        <button class="list-notification-btn" mat-icon-button matTooltip="Notifications">
+          <mat-icon>notifications_none</mat-icon>
+        </button>
+      </div>
+
+      <div class="search-wrapper list-search-wrapper" *ngIf="activeFilter !== 'projects'">
+        <mat-icon class="search-icon">search</mat-icon>
+        <input
+          class="search-input"
+          type="text"
+          placeholder="Search all docs..."
+          [(ngModel)]="searchQuery"
+          (input)="onSearch()">
+        <button class="clear-search" *ngIf="searchQuery" (click)="clearSearch()">
+          <mat-icon>close</mat-icon>
+        </button>
+      </div>
     </div>
+
+    <button class="list-workspace-btn">
+      <span class="workspace-name">Optima Workspace</span>
+      <mat-icon>expand_more</mat-icon>
+    </button>
   </div>
 
   <!-- Page Header -->
