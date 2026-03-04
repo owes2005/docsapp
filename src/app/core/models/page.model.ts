@@ -9,6 +9,7 @@ export interface Page {
 }
 
 export interface PageContent {
+  id?: string;
   blocks: ContentBlock[];
 }
 
@@ -18,9 +19,15 @@ export interface ContentBlock {
   content?: any;
   order: number;
   level?: number;
+  // Legacy fields kept for backward compatibility with old records.
   imageUrl?: string;
   imageCaption?: string;
   formatting?: TextFormatting;
+}
+
+export interface ImageBlockContent {
+  url: string;
+  caption?: string;
 }
 
 export type BlockType = 

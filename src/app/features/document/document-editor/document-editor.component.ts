@@ -74,9 +74,10 @@ export class DocumentEditorComponent implements OnInit {
       order: this.pages.length + 1,
       parentId: null,
       content: {
+        id: 'content-' + Date.now(),
         blocks: [
           {
-            id: 'block' + Date.now(),
+            id: 'text-' + Date.now(),
             type: 'text',
             content: '',
             order: 0

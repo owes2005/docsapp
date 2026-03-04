@@ -156,7 +156,7 @@
                 [src]="block.imageUrl"
                 alt="Uploaded image"
                 (click)="openImageViewer(block.imageUrl, block.imageCaption)"
-                (error)="block.imageUrl = ''; savePage()"
+                (error)="onImageLoadError(block.id)"
                 class="clickable-image"
               />
 

@@ -1,6 +1,6 @@
 import { Component, Input, OnInit, OnChanges, OnDestroy, SecurityContext } from '@angular/core';
 import { CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-drop';
-import { Page, ContentBlock, BlockType } from 'src/app/core/models/page.model';
+import { Page, ContentBlock, BlockType, ImageBlockContent } from 'src/app/core/models/page.model';
 import { PageService } from 'src/app/core/services/page.service';
 import { HttpClient } from '@angular/common/http';
 import { MatDialog } from '@angular/material/dialog';
@@ -45,6 +45,8 @@ export class BlockEditorComponent implements OnInit, OnChanges, OnDestroy {
     string,
     { raw: string; safe: SafeHtml }
   >();
+  private imageLoadRetry = new Map<string, number>();
+  private imageOriginalUrl = new Map<string, string>();
 
   blockTypes: BlockMenuItem[] = [
     {
@@ -153,8 +155,11 @@ export class BlockEditorComponent implements OnInit, OnChanges, OnDestroy {
 
     // Ensure each block has required properties
     this.blocks.forEach((block, index) => {
-      if (!block.id) block.id = 'block' + Date.now() + index;
+      if (!block.id) block.id = this.generateBlockId(block.type);
       if (block.order === undefined) block.order = index;
+      if (block.type === 'image') {
+        this.normalizeImageBlock(block);
+      }
     });
 
     // Sort blocks by order
@@ -197,7 +202,7 @@ export class BlockEditorComponent implements OnInit, OnChanges, OnDestroy {
           : '';
 
     const newBlock: ContentBlock = {
-      id: 'block' + Date.now(),
+      id: this.generateBlockId(type as BlockType),
       type: type as BlockType,
       content: listContent,
       order: this.blocks.length,
@@ -249,7 +254,7 @@ export class BlockEditorComponent implements OnInit, OnChanges, OnDestroy {
     if (block) {
       const duplicate: ContentBlock = {
         ...JSON.parse(JSON.stringify(block)), // Deep clone
-        id: 'block' + Date.now(),
+        id: this.generateBlockId(block.type),
         order: block.order + 1,
       };
       this.blocks.splice(block.order + 1, 0, duplicate);
@@ -263,7 +268,7 @@ export class BlockEditorComponent implements OnInit, OnChanges, OnDestroy {
     if (!block) return;
 
     const newBlock: ContentBlock = {
-      id: 'block' + Date.now(),
+      id: this.generateBlockId('text'),
       type: 'text',
       content: '',
       order: block.order + 1,
@@ -499,7 +504,7 @@ export class BlockEditorComponent implements OnInit, OnChanges, OnDestroy {
     if (!afterBlock) return;
 
     const newBlock: ContentBlock = {
-      id: 'block' + Date.now(),
+      id: this.generateBlockId(type),
       type: type,
       content: '',
       order: afterBlock.order + 1,
@@ -580,6 +585,7 @@ export class BlockEditorComponent implements OnInit, OnChanges, OnDestroy {
 
         if (isEmpty) {
           activeBlock.type = type;
+          activeBlock.id = this.generateBlockId(type);
           if (level) activeBlock.level = level;
           activeBlock.content = listContent;
           this.savePage();
@@ -600,7 +606,7 @@ export class BlockEditorComponent implements OnInit, OnChanges, OnDestroy {
       const activeBlock = this.blocks.find((b) => b.id === this.activeBlockId);
       if (activeBlock) {
         const newBlock: ContentBlock = {
-          id: 'block' + Date.now(),
+          id: this.generateBlockId(type),
           type: type,
           content: listContent,
           order: activeBlock.order + 1,
@@ -670,7 +676,9 @@ export class BlockEditorComponent implements OnInit, OnChanges, OnDestroy {
       reader.onload = (e: any) => {
         const block = this.blocks.find((b) => b.id === blockId);
         if (block) {
-          block.imageUrl = e.target.result;
+          this.imageLoadRetry.delete(blockId);
+          this.imageOriginalUrl.delete(blockId);
+          this.setImageUrl(block, e.target.result);
           this.savePage();
         }
       };
@@ -679,29 +687,71 @@ export class BlockEditorComponent implements OnInit, OnChanges, OnDestroy {
   }
 
   uploadImageFromUrl(blockId: string): void {
-    const url = prompt('Enter image URL (direct link to image):');
-    if (url) {
-      if (
-        url.match(/\.(jpeg|jpg|gif|png|webp|svg)$/i) ||
-        url.includes('http')
-      ) {
-        const block = this.blocks.find((b) => b.id === blockId);
-        if (block) {
-          block.imageUrl = url;
-          this.savePage();
-        }
-      } else {
-        alert('Please enter a valid image URL');
-      }
+    const rawUrl = prompt('Enter image URL (direct link to image):');
+    if (!rawUrl) return;
+
+    const normalizedUrl = this.normalizeImageUrl(rawUrl);
+    if (!normalizedUrl) {
+      alert('Please enter a valid image URL (http/https).');
+      return;
     }
+
+    const block = this.blocks.find((b) => b.id === blockId);
+    if (!block) return;
+
+    this.imageLoadRetry.delete(blockId);
+    this.imageOriginalUrl.set(blockId, normalizedUrl);
+    this.setImageUrl(
+      block,
+      this.isHttpImageUrl(normalizedUrl)
+        ? this.toProxyUrl(normalizedUrl)
+        : normalizedUrl
+    );
+    this.savePage();
   }
 
   changeImage(blockId: string): void {
     const block = this.blocks.find((b) => b.id === blockId);
     if (!block) return;
 
-    block.imageUrl = '';
+    this.imageLoadRetry.delete(blockId);
+    this.imageOriginalUrl.delete(blockId);
+    this.setImageUrl(block, '');
     this.savePage();
+  }
+
+  onImageLoadError(blockId: string): void {
+    const block = this.blocks.find((b) => b.id === blockId);
+    if (!block) return;
+
+    const currentUrl = this.getImageUrl(block);
+    if (!currentUrl) return;
+
+    const originalUrl = this.imageOriginalUrl.get(blockId);
+    const retries = this.imageLoadRetry.get(blockId) || 0;
+    // Try direct URL if proxy path fails.
+    if (retries === 0 && this.isProxyUrl(currentUrl) && originalUrl) {
+      this.setImageUrl(block, originalUrl);
+      this.imageLoadRetry.set(blockId, 1);
+      this.savePage();
+      return;
+    }
+
+    // Try proxy URL if direct path fails.
+    if (
+      retries <= 1 &&
+      this.isHttpImageUrl(currentUrl) &&
+      !this.isProxyUrl(currentUrl)
+    ) {
+      this.setImageUrl(block, this.toProxyUrl(currentUrl));
+      this.imageLoadRetry.set(blockId, 2);
+      this.savePage();
+      return;
+    }
+
+    alert(
+      'Image could not be loaded. Use a direct image file URL (.png/.jpg/.webp), or upload from your device.'
+    );
   }
 
   openImageViewer(imageUrl: string, caption?: string): void {
@@ -782,17 +832,28 @@ export class BlockEditorComponent implements OnInit, OnChanges, OnDestroy {
       const updatedPage: Partial<Page> = {
         title: this.pageTitle,
         content: {
-          blocks: this.blocks.map((block) => ({
-            id: block.id,
-            type: block.type,
-            content: this.pendingBlockContent.has(block.id)
-              ? this.pendingBlockContent.get(block.id)
-              : block.content,
-            order: block.order,
-            level: block.level,
-            imageUrl: block.imageUrl,
-            imageCaption: block.imageCaption,
-          })),
+          id: this.page.content?.id || `content-${this.page.id}`,
+          blocks: this.blocks.map((block) => {
+            if (block.type === 'image') {
+              const image = this.getImageContent(block);
+              return {
+                id: block.id,
+                type: block.type,
+                content: image,
+                order: block.order,
+              };
+            }
+
+            return {
+              id: block.id,
+              type: block.type,
+              content: this.pendingBlockContent.has(block.id)
+                ? this.pendingBlockContent.get(block.id)
+                : block.content,
+              order: block.order,
+              level: block.level,
+            };
+          }),
         },
       };
 
@@ -829,6 +890,179 @@ export class BlockEditorComponent implements OnInit, OnChanges, OnDestroy {
     }
 
     return normalized;
+  }
+
+  private normalizeImageUrl(raw: string): string | null {
+    let trimmed = raw.trim();
+    if (!trimmed) return null;
+
+    if (!/^https?:\/\//i.test(trimmed) && /^www\./i.test(trimmed)) {
+      trimmed = `https://${trimmed}`;
+    }
+
+    const extractedDirect = this.extractDirectImageUrl(trimmed);
+    if (extractedDirect) {
+      return extractedDirect;
+    }
+
+    // Common shared-link normalization.
+    const driveMatch = trimmed.match(
+      /^https?:\/\/drive\.google\.com\/file\/d\/([^/]+)\//i
+    );
+    if (driveMatch?.[1]) {
+      return `https://drive.google.com/uc?export=view&id=${driveMatch[1]}`;
+    }
+
+    const dropboxMatch = trimmed.match(/^https?:\/\/www\.dropbox\.com\/.+/i);
+    if (dropboxMatch) {
+      return trimmed
+        .replace('www.dropbox.com', 'dl.dropboxusercontent.com')
+        .replace(/[?&]dl=0\b/i, '');
+    }
+
+    const driveOpenMatch = trimmed.match(
+      /^https?:\/\/drive\.google\.com\/open\?id=([^&]+)/i
+    );
+    if (driveOpenMatch?.[1]) {
+      return `https://drive.google.com/uc?export=view&id=${driveOpenMatch[1]}`;
+    }
+
+    try {
+      const parsed = new URL(trimmed);
+      if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+        return null;
+      }
+      return parsed.toString();
+    } catch {
+      return null;
+    }
+  }
+
+  private isHttpImageUrl(url: string): boolean {
+    return /^https?:\/\//i.test(url);
+  }
+
+  private normalizeImageBlock(block: ContentBlock): void {
+    const image = this.getImageContent(block);
+    block.content = image;
+    block.imageUrl = image.url;
+    block.imageCaption = image.caption || '';
+  }
+
+  private getImageContent(block: ContentBlock): ImageBlockContent {
+    const contentObj =
+      block.content && typeof block.content === 'object' && !Array.isArray(block.content)
+        ? block.content
+        : null;
+    const urlFromContent =
+      typeof contentObj?.url === 'string' ? contentObj.url : '';
+    const captionFromContent =
+      typeof contentObj?.caption === 'string' ? contentObj.caption : '';
+    const url =
+      typeof block.imageUrl === 'string' && block.imageUrl.length > 0
+        ? block.imageUrl
+        : urlFromContent;
+    const caption =
+      typeof block.imageCaption === 'string'
+        ? block.imageCaption
+        : captionFromContent;
+    return { url, caption };
+  }
+
+  private getImageUrl(block: ContentBlock): string {
+    return this.getImageContent(block).url;
+  }
+
+  private setImageUrl(block: ContentBlock, url: string): void {
+    const image = this.getImageContent(block);
+    const next: ImageBlockContent = { ...image, url };
+    block.content = next;
+    block.imageUrl = next.url;
+    block.imageCaption = next.caption || '';
+  }
+
+  private isProxyUrl(url: string): boolean {
+    return /images\.weserv\.nl\/\?url=/i.test(url);
+  }
+
+  private toProxyUrl(url: string): string {
+    try {
+      const parsed = new URL(url);
+      const stripped = `${parsed.host}${parsed.pathname}${parsed.search}`;
+      return `https://images.weserv.nl/?url=${encodeURIComponent(stripped)}`;
+    } catch {
+      return url;
+    }
+  }
+
+  private extractDirectImageUrl(input: string): string | null {
+    const tryParse = (value: string): URL | null => {
+      try {
+        return new URL(value);
+      } catch {
+        return null;
+      }
+    };
+
+    const decodeRepeated = (value: string): string => {
+      let current = value;
+      for (let i = 0; i < 3; i++) {
+        try {
+          const decoded = decodeURIComponent(current);
+          if (decoded === current) break;
+          current = decoded;
+        } catch {
+          break;
+        }
+      }
+      return current;
+    };
+
+    const normalizeCandidate = (value: string): string | null => {
+      const decoded = decodeRepeated(value.trim());
+      const withProtocol = /^https?:\/\//i.test(decoded)
+        ? decoded
+        : /^www\./i.test(decoded)
+          ? `https://${decoded}`
+          : decoded;
+      const parsed = tryParse(withProtocol);
+      if (!parsed) return null;
+      if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+        return null;
+      }
+      return parsed.toString();
+    };
+
+    const parse = tryParse(input);
+    if (!parse) return null;
+
+    // Bing image result links usually carry the real URL in mediaurl/imgurl.
+    if (/(\.|^)bing\.com$/i.test(parse.hostname)) {
+      const fromMedia =
+        parse.searchParams.get('mediaurl') ||
+        parse.searchParams.get('imgurl') ||
+        parse.searchParams.get('url');
+      if (fromMedia) {
+        return normalizeCandidate(fromMedia);
+      }
+    }
+
+    // If user pasted an already proxied weserv URL, try to unwrap nested URL.
+    if (/images\.weserv\.nl$/i.test(parse.hostname)) {
+      const nested = parse.searchParams.get('url');
+      if (nested) {
+        const normalizedNested = normalizeCandidate(nested);
+        if (!normalizedNested) return null;
+        return this.extractDirectImageUrl(normalizedNested) || normalizedNested;
+      }
+    }
+
+    return null;
+  }
+
+  private generateBlockId(type: BlockType): string {
+    const safeType = (type || 'text').toLowerCase();
+    return `${safeType}-${Date.now()}`;
   }
 
   private shouldOpenSlashMenu(range: Range): boolean {

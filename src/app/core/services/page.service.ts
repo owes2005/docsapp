@@ -37,18 +37,27 @@ export class PageService {
   }
 
   createPage(page: Partial<Page>): Observable<Page> {
-    // Create a completely new page with empty blocks
-    const newPage = {
-      ...page,
-      content: {
-        blocks: [
+    const incomingBlocks = page.content?.blocks || [];
+    const blocks = incomingBlocks.length > 0
+      ? incomingBlocks.map((block, index) => ({
+          ...block,
+          id: block.id || this.createBlockId(block.type || 'text', incomingBlocks, index),
+          order: block.order ?? index
+        }))
+      : [
           {
-            id: 'block' + Date.now(),
+            id: this.createBlockId('text'),
             type: 'text',
             content: '',
             order: 0
           }
-        ]
+        ];
+
+    const newPage = {
+      ...page,
+      content: {
+        id: page.content?.id || 'content-' + Date.now(),
+        blocks
       }
     };
     
@@ -86,6 +95,12 @@ export class PageService {
   }
 
   duplicatePage(page: Page): Observable<Page> {
+    const duplicatedBlocks = (page.content?.blocks || []).map((block, index, source) => ({
+      ...block,
+      id: this.createBlockId(block.type, source, index),
+      order: index
+    }));
+
     // Deep clone the page content to avoid reference issues
     const duplicatedPage: Partial<Page> = {
       documentId: page.documentId,
@@ -94,10 +109,8 @@ export class PageService {
       order: page.order + 1,
       parentId: page.parentId,
       content: {
-        blocks: page.content.blocks.map(block => ({
-          ...block,
-          id: 'block' + Date.now() + Math.random() // New unique IDs
-        }))
+        id: 'content-' + Date.now(),
+        blocks: duplicatedBlocks
       }
     };
 
@@ -131,5 +144,17 @@ export class PageService {
   private handleError(error: any): Observable<never> {
     console.error('Page Service Error:', error);
     return throwError(() => new Error('Something went wrong'));
+  }
+
+  private createBlockId(
+    type: string,
+    _blocks?: Array<{ id?: string; type?: string }>,
+    currentIndex?: number
+  ): string {
+    const safeType = (type || 'text').toLowerCase();
+    const ts = Date.now();
+    return currentIndex !== undefined
+      ? `${safeType}-${ts}-${currentIndex}`
+      : `${safeType}-${ts}`;
   }
 }

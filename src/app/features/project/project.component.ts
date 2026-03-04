@@ -718,10 +718,11 @@ export class ProjectComponent implements OnInit {
             const text = this.sanitizePdfText(this.htmlToPlainText(raw));
 
             if (block.type === 'image') {
-              if (block.imageUrl) {
+              const image = this.getImageBlockData(block);
+              if (image.url) {
                 await renderImage(
-                  block.imageUrl,
-                  block.imageCaption ? `Caption: ${this.sanitizePdfText(block.imageCaption)}` : undefined,
+                  image.url,
+                  image.caption ? `Caption: ${this.sanitizePdfText(image.caption)}` : undefined,
                   36
                 );
               } else {
@@ -957,6 +958,25 @@ export class ProjectComponent implements OnInit {
 
   private containsHtml(input: string): boolean {
     return /<[^>]+>/.test(input || '');
+  }
+
+  private getImageBlockData(block: any): { url: string; caption: string } {
+    const content =
+      block?.content &&
+      typeof block.content === 'object' &&
+      !Array.isArray(block.content)
+        ? block.content
+        : null;
+    const urlFromContent = typeof content?.url === 'string' ? content.url : '';
+    const captionFromContent =
+      typeof content?.caption === 'string' ? content.caption : '';
+    const url = typeof block?.imageUrl === 'string' && block.imageUrl
+      ? block.imageUrl
+      : urlFromContent;
+    const caption = typeof block?.imageCaption === 'string'
+      ? block.imageCaption
+      : captionFromContent;
+    return { url, caption };
   }
 
   private extractStyledRunsFromHtml(

@@ -236,8 +236,9 @@ export class AppShellComponent implements OnInit {
               context.y += context.layout.sectionGap;
               break;
             case 'image': {
-              if (block.imageUrl) {
-                const ok = await this.renderImage(context, block.imageUrl, 300);
+              const image = this.getImageBlockData(block);
+              if (image.url) {
+                const ok = await this.renderImage(context, image.url, 300);
                 if (!ok) {
                   this.renderParagraph(context, '[Image could not be embedded]', {
                     size: 10,
@@ -252,8 +253,8 @@ export class AppShellComponent implements OnInit {
                   color: context.theme.mutedColor
                 });
               }
-              if (block.imageCaption) {
-                this.renderParagraph(context, `Caption: ${block.imageCaption}`, {
+              if (image.caption) {
+                this.renderParagraph(context, `Caption: ${image.caption}`, {
                   size: 10,
                   style: 'normal',
                   color: context.theme.mutedColor
@@ -809,6 +810,25 @@ export class AppShellComponent implements OnInit {
 
   private containsHtml(input: string): boolean {
     return /<[^>]+>/.test(input || '');
+  }
+
+  private getImageBlockData(block: any): { url: string; caption: string } {
+    const content =
+      block?.content &&
+      typeof block.content === 'object' &&
+      !Array.isArray(block.content)
+        ? block.content
+        : null;
+    const urlFromContent = typeof content?.url === 'string' ? content.url : '';
+    const captionFromContent =
+      typeof content?.caption === 'string' ? content.caption : '';
+    const url = typeof block?.imageUrl === 'string' && block.imageUrl
+      ? block.imageUrl
+      : urlFromContent;
+    const caption = typeof block?.imageCaption === 'string'
+      ? block.imageCaption
+      : captionFromContent;
+    return { url, caption };
   }
 
   private extractStyledRunsFromHtml(
