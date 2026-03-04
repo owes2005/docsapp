@@ -191,6 +191,35 @@
   padding: 4px 16px 8px 16px;
 }
 
+.back-projects-btn {
+  width: calc(100% - 20px);
+  margin: 0 10px 8px;
+  height: 30px;
+  border: 1px solid #dbe3ee;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #334155;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.back-projects-btn:hover {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+}
+
+.back-projects-btn mat-icon {
+  width: 16px;
+  height: 16px;
+  font-size: 16px;
+}
+
 /* ===== PROJECT TREE ===== */
 .project-tree {
   padding: 0;

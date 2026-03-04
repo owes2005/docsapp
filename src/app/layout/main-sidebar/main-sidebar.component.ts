@@ -29,6 +29,7 @@ export class MainSidebarComponent implements OnInit {
   activeProjectId: string | null = null;
   activeFolderId: string | null = null;
   activeDocId: string | null = null;
+  isDocumentsListRoute = false;
 
   constructor(
     private documentService: DocumentService,
@@ -67,29 +68,38 @@ export class MainSidebarComponent implements OnInit {
   updateActiveState(url: string): void {
     const projectMatch = url.match(/\/project\/([^\/\?]+)/);
     const docMatch = url.match(/\/document\/([^\/\?]+)/);
+    const folderMatch = url.match(/folderId=([^&]+)/);
+    this.isDocumentsListRoute = /\/documents(\?|$)/.test(url);
+
+    // Reset active markers first so non-project routes show all projects again.
+    this.activeProjectId = null;
+    this.activeFolderId = null;
+    this.activeDocId = null;
 
     if (projectMatch) {
       this.activeProjectId = projectMatch[1];
-      this.activeFolderId = null;
-      this.activeDocId = null;
       this.expandedProjects.add(this.activeProjectId);
     } else if (docMatch) {
       this.activeDocId = docMatch[1];
-      this.activeProjectId = null;
-      this.activeFolderId = null;
       // Expand parent folder and project
       const doc = this.documents.find(d => d.id === docMatch[1]);
+      if (doc?.projectId) {
+        this.activeProjectId = doc.projectId;
+        this.expandedProjects.add(doc.projectId);
+      }
       if (doc?.folderId) {
         this.expandedFolders.add(doc.folderId);
         const folder = this.folders.find(f => f.id === doc.folderId);
         if (folder?.projectId) {
+          if (!this.activeProjectId) {
+            this.activeProjectId = folder.projectId;
+          }
           this.expandedProjects.add(folder.projectId);
         }
       }
     }
 
     // Check for folder query param
-    const folderMatch = url.match(/folderId=([^&]+)/);
     if (folderMatch) {
       this.activeFolderId = folderMatch[1];
       this.expandedFolders.add(this.activeFolderId);
@@ -140,6 +150,13 @@ export class MainSidebarComponent implements OnInit {
     return this.expandedFolders.has(folderId);
   }
 
+  get visibleProjects(): Project[] {
+    if (!this.activeProjectId) {
+      return this.projects;
+    }
+    return this.projects.filter((p) => p.id === this.activeProjectId);
+  }
+
   // ===== GET DATA =====
 
   getFoldersForProject(projectId: string): Folder[] {
@@ -176,6 +193,12 @@ export class MainSidebarComponent implements OnInit {
     this.activeProjectId = null;
     this.activeFolderId = null;
     this.router.navigate(['/document', docId]);
+  }
+
+  backToAllProjects(): void {
+    this.router.navigate(['/documents'], {
+      queryParams: { filter: 'projects' }
+    });
   }
 
   createNewDocument(): void {

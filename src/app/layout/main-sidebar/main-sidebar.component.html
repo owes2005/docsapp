@@ -28,13 +28,18 @@
 
   <!-- Navigation -->
   <nav class="sidebar-nav">
+    <ng-container *ngIf="!isDocumentsListRoute">
 
     <!-- Projects Section -->
     <div class="nav-section-label">Projects</div>
+    <button class="back-projects-btn" *ngIf="activeProjectId" (click)="backToAllProjects()">
+      <mat-icon>arrow_back</mat-icon>
+      Back to all projects
+    </button>
 
     <div class="project-tree">
 
-      <div class="project-item" *ngFor="let project of projects">
+      <div class="project-item" *ngFor="let project of visibleProjects">
 
         <!-- Project Row -->
         <div class="project-row" [class.active]="isProjectActive(project.id)">
@@ -151,6 +156,7 @@
       </div>
 
     </div>
+    </ng-container>
 
   </nav>
 

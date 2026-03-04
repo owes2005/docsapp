@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { Router, ActivatedRoute } from '@angular/router';
 import { DocumentService } from 'src/app/core/services/document.service';
-import { Document, Folder } from 'src/app/core/models/document.model';
+import { Document, Folder, Project } from 'src/app/core/models/document.model';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 
@@ -13,10 +13,12 @@ import { map } from 'rxjs/operators';
 export class DocumentListComponent implements OnInit {
   documents$: Observable<Document[]>;
   folders$: Observable<Folder[]>;
+  projects$: Observable<Project[]>;
   filteredDocuments$: Observable<Document[]>;
   
   searchQuery = '';
-  activeFilter = 'recent';
+  activeFilter = 'projects';
+  selectedProjectId: string | null = null;
   renamingDocId: string | number | null = null;
   renamingTitle = '';
   renamingFolderId: string | number | null = null;
@@ -31,12 +33,14 @@ export class DocumentListComponent implements OnInit {
   ) {
     this.documents$ = this.documentService.documents$;
     this.folders$ = this.documentService.folders$;
+    this.projects$ = this.documentService.projects$;
     this.filteredDocuments$ = this.documents$;
   }
 
  ngOnInit(): void {
   this.documentService.getDocuments().subscribe();
   this.documentService.getFolders().subscribe();
+  this.documentService.getProjects().subscribe();
 
   // Handle filter from sidebar navigation
   this.route.queryParams.subscribe(params => {
@@ -50,7 +54,21 @@ export class DocumentListComponent implements OnInit {
 
   setFilter(filter: string): void {
     this.activeFilter = filter;
+    if (filter !== 'projects') {
+      this.selectedProjectId = null;
+    }
     this.applyFilter();
+  }
+
+  selectProject(projectId: string | null): void {
+    this.activeFilter = 'projects';
+    this.selectedProjectId = projectId;
+    this.applyFilter();
+  }
+
+  openProject(project: Project): void {
+    this.selectedProjectId = project.id;
+    this.router.navigate(['/project', project.id]);
   }
 
   applyFilter(): void {
@@ -67,6 +85,14 @@ export class DocumentListComponent implements OnInit {
 
         // Apply tab filter
         switch (this.activeFilter) {
+          case 'projects':
+            filtered = this.selectedProjectId
+              ? filtered.filter(doc => doc.projectId === this.selectedProjectId)
+              : [];
+            filtered = filtered.sort((a, b) =>
+              new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+            );
+            break;
           case 'favorites':
             filtered = filtered.filter(doc => doc.isFavorite);
             break;
@@ -97,22 +123,6 @@ export class DocumentListComponent implements OnInit {
   
 
   // ===== DOCUMENT ACTIONS =====
-
-  createDocument(): void {
-    const newDoc = {
-      workspaceId: 'ws1',
-      title: 'Untitled',
-      icon: '📄',
-      isFavorite: false,
-      isOwned: true,
-      folderId: null,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    };
-    this.documentService.createDocument(newDoc).subscribe(doc => {
-      this.router.navigate(['/document', doc.id]);
-    });
-  }
 
   openDocument(doc: Document): void {
     this.router.navigate(['/document', doc.id]);
@@ -266,5 +276,11 @@ deleteDocument(event: Event, id: string): void {
     if (!folderId) return 'My docs';
     const folder = folders.find(f => f.id === folderId);
     return folder ? folder.name : 'My docs';
+  }
+
+  getProjectName(projectId: string | undefined, projects: Project[]): string {
+    if (!projectId) return 'Unassigned';
+    const project = projects.find(p => p.id === projectId);
+    return project ? project.name : 'Unassigned';
   }
 }

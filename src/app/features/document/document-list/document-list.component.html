@@ -22,16 +22,13 @@
       <div class="breadcrumb">My Workspace</div>
       <h1 class="page-title">All Documents</h1>
     </div>
-    <div class="header-right">
-      <button class="create-btn" (click)="createDocument()">
-        <mat-icon>add</mat-icon>
-        Create doc
-      </button>
-    </div>
   </div>
 
   <!-- Filter Tabs -->
   <div class="filter-tabs">
+    <button class="filter-tab" [class.active]="activeFilter === 'projects'" (click)="setFilter('projects')">
+      Projects
+    </button>
     <button class="filter-tab" [class.active]="activeFilter === 'recent'" (click)="setFilter('recent')">
       Recent
     </button>
@@ -136,15 +133,41 @@
       <div class="section-divider"></div>
     </ng-container>
 
-    <!-- Documents Section -->
-    <div class="section">
+    <!-- Projects Section -->
+    <ng-container *ngIf="activeFilter === 'projects' && !searchQuery">
+      <div class="section">
+        <div class="section-header">
+          <span class="section-label">Projects</span>
+        </div>
 
-      <div class="section-header" *ngIf="activeFilter === 'recent' && !searchQuery">
+        <ng-container *ngIf="projects$ | async as projectList">
+          <div class="projects-grid" *ngIf="projectList.length > 0">
+            <button class="project-card"
+                    *ngFor="let project of projectList"
+                    [class.active]="selectedProjectId === project.id"
+                    (click)="openProject(project)">
+              <span class="project-icon" [style.background]="project.color">
+                {{project.icon}}
+              </span>
+              <span class="project-name">{{project.name}}</span>
+            </button>
+          </div>
+        </ng-container>
+      </div>
+
+      
+    </ng-container>
+
+    <!-- Documents Section -->
+    <div class="section" *ngIf="activeFilter !== 'projects'">
+
+      <div class="section-header" *ngIf="!searchQuery && activeFilter === 'recent'">
         <span class="section-label">Documents</span>
       </div>
 
       <!-- Document List -->
       <ng-container *ngIf="folders$ | async as folders">
+        <ng-container *ngIf="projects$ | async as projects">
         <div class="doc-row"
              *ngFor="let doc of filteredDocuments$ | async"
              (click)="renamingDocId !== doc.id && openDocument(doc)">
@@ -169,6 +192,8 @@
             </div>
 
             <div class="doc-meta">
+              <span class="doc-project">{{getProjectName(doc.projectId, projects)}}</span>
+              <span class="dot">·</span>
               <span class="doc-folder">{{getFolderName(doc.folderId, folders)}}</span>
               <span class="dot">·</span>
               <span class="doc-date">Updated {{doc.updatedAt | date:'MMM d, y'}}</span>
@@ -213,19 +238,16 @@
 
         </div>
       </ng-container>
+      </ng-container>
 
       <!-- Empty State -->
       <div class="empty-state"
            *ngIf="(filteredDocuments$ | async)?.length === 0">
         <div class="empty-illustration">
-          <mat-icon>{{searchQuery ? 'search_off' : activeFilter === 'favorites' ? 'star_outline' : 'description'}}</mat-icon>
+          <mat-icon>{{searchQuery ? 'search_off' : activeFilter === 'favorites' ? 'star_outline' : activeFilter === 'projects' ? 'folder_open' : 'description'}}</mat-icon>
         </div>
-        <h3>{{searchQuery ? 'No results for "' + searchQuery + '"' : activeFilter === 'favorites' ? 'No favorites yet' : 'No documents yet'}}</h3>
-        <p>{{searchQuery ? 'Try a different search term' : activeFilter === 'favorites' ? 'Star a document to see it here' : 'Create your first document to get started'}}</p>
-        <button class="create-btn" *ngIf="!searchQuery && activeFilter !== 'favorites'" (click)="createDocument()">
-          <mat-icon>add</mat-icon>
-          Create doc
-        </button>
+        <h3>{{searchQuery ? 'No results for "' + searchQuery + '"' : activeFilter === 'favorites' ? 'No favorites yet' : activeFilter === 'projects' ? 'No documents in this project' : 'No documents yet'}}</h3>
+        <p>{{searchQuery ? 'Try a different search term' : activeFilter === 'favorites' ? 'Star a document to see it here' : activeFilter === 'projects' ? 'Pick another project or create a new document' : 'Create your first document to get started'}}</p>
       </div>
 
     </div>
