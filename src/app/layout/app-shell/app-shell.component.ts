@@ -30,7 +30,6 @@ interface PdfRenderContext {
   theme: PdfTheme;
   layout: PdfLayout;
   docTitle: string;
-  exportedAt: string;
   pageWidth: number;
   pageHeight: number;
   contentWidth: number;
@@ -134,7 +133,6 @@ export class AppShellComponent implements OnInit {
         theme,
         layout,
         docTitle: this.currentDocTitle || 'Untitled',
-        exportedAt: '',
         pageWidth: pdf.internal.pageSize.getWidth(),
         pageHeight: pdf.internal.pageSize.getHeight(),
         contentWidth: pdf.internal.pageSize.getWidth() - layout.marginLeft - layout.marginRight,
@@ -144,15 +142,11 @@ export class AppShellComponent implements OnInit {
       };
 
       this.addHeader(context);
-      const totalBlockCount = sortedPages.reduce((sum, page) => {
-        const blocks = page.content?.blocks || [];
-        return sum + blocks.length;
-      }, 0);
       this.renderHeading(context, context.docTitle || 'Untitled', 1);
       this.renderParagraph(
         context,
         `Pages ${sortedPages.length}`,
-        { size: 10, style: 'normal', color: context.theme.mutedColor }
+        { size: 10, style: 'normal', color: context.theme.mutedColor, lineHeight: 14 }
       );
       this.setStrokeColor(context, context.theme.mutedColor);
       context.pdf.setLineWidth(0.8);
@@ -175,7 +169,7 @@ export class AppShellComponent implements OnInit {
 
         const blocks = [...(page.content?.blocks || [])].sort((a, b) => a.order - b.order);
         if (blocks.length === 0) {
-          this.renderParagraph(context, '(No content)', {
+          this.renderParagraph(context, 'No content', {
             size: 10,
             style: 'italic',
             color: context.theme.mutedColor
@@ -206,10 +200,11 @@ export class AppShellComponent implements OnInit {
               if (hasHtmlFormatting) {
                 this.renderRichText(context, rawContent, {
                   size: level === 1 ? 20 : level === 2 ? 16 : 14,
-                  style: 'bold'
+                  style: 'bold',
+                  indent: 16
                 });
               } else {
-                this.renderHeading(context, headingText, level);
+                this.renderHeading(context, headingText, level, 16);
               }
               break;
             }
@@ -217,10 +212,11 @@ export class AppShellComponent implements OnInit {
               if (hasHtmlFormatting) {
                 this.renderRichText(context, rawContent, {
                   size: 12,
-                  style: 'normal'
+                  style: 'normal',
+                  indent: 16
                 });
               } else {
-                this.renderParagraph(context, textContent || ' ');
+                this.renderParagraph(context, textContent || ' ', { indent: 16 });
               }
               break;
             case 'divider':
@@ -228,36 +224,39 @@ export class AppShellComponent implements OnInit {
               this.setStrokeColor(context, context.theme.mutedColor);
               context.pdf.setLineWidth(0.8);
               context.pdf.line(
-                context.layout.marginLeft,
+                context.layout.marginLeft + 16,
                 context.y,
-                context.pageWidth - context.layout.marginRight,
+                context.pageWidth - context.layout.marginRight - 16,
                 context.y
               );
-              context.y += context.layout.sectionGap;
+              context.y += 14;
               break;
             case 'image': {
               const image = this.getImageBlockData(block);
               if (image.url) {
-                const ok = await this.renderImage(context, image.url, 300);
+                const ok = await this.renderImage(context, image.url, 300, 16);
                 if (!ok) {
-                  this.renderParagraph(context, '[Image could not be embedded]', {
+                  this.renderParagraph(context, 'Image could not be embedded', {
                     size: 10,
                     style: 'italic',
-                    color: context.theme.mutedColor
+                    color: context.theme.mutedColor,
+                    indent: 16
                   });
                 }
               } else {
-                this.renderParagraph(context, '[Image placeholder]', {
+                this.renderParagraph(context, 'Image unavailable', {
                   size: 10,
                   style: 'italic',
-                  color: context.theme.mutedColor
+                  color: context.theme.mutedColor,
+                  indent: 16
                 });
               }
               if (image.caption) {
                 this.renderParagraph(context, `Caption: ${image.caption}`, {
                   size: 10,
                   style: 'normal',
-                  color: context.theme.mutedColor
+                  color: context.theme.mutedColor,
+                  indent: 20
                 });
               }
               break;
@@ -265,28 +264,31 @@ export class AppShellComponent implements OnInit {
             case 'gallery': {
               const galleryItems = Array.isArray(block.content) ? block.content : [];
               if (galleryItems.length === 0) {
-                this.renderParagraph(context, '[Gallery: 0 image(s)]', {
+                this.renderParagraph(context, 'Gallery: no images', {
                   size: 10,
                   style: 'italic',
-                  color: context.theme.mutedColor
+                  color: context.theme.mutedColor,
+                  indent: 16
                 });
               } else {
-                this.renderParagraph(context, `[Gallery: ${galleryItems.length} image(s)]`, {
+                this.renderParagraph(context, `Gallery: ${galleryItems.length} image(s)`, {
                   size: 10,
                   style: 'italic',
-                  color: context.theme.mutedColor
+                  color: context.theme.mutedColor,
+                  indent: 16
                 });
                 for (const item of galleryItems) {
                   const itemUrl = typeof item?.url === 'string' ? item.url : '';
                   if (!itemUrl) {
                     continue;
                   }
-                  const ok = await this.renderImage(context, itemUrl, 220);
+                  const ok = await this.renderImage(context, itemUrl, 220, 24);
                   if (!ok) {
-                    this.renderParagraph(context, '[Gallery image could not be embedded]', {
+                    this.renderParagraph(context, 'Gallery image could not be embedded', {
                       size: 10,
                       style: 'italic',
-                      color: context.theme.mutedColor
+                      color: context.theme.mutedColor,
+                      indent: 24
                     });
                   }
                   const itemCaption = typeof item?.caption === 'string' ? item.caption : '';
@@ -294,7 +296,8 @@ export class AppShellComponent implements OnInit {
                     this.renderParagraph(context, `Caption: ${itemCaption}`, {
                       size: 10,
                       style: 'normal',
-                      color: context.theme.mutedColor
+                      color: context.theme.mutedColor,
+                      indent: 28
                     });
                   }
                 }
@@ -302,7 +305,7 @@ export class AppShellComponent implements OnInit {
               break;
             }
             default:
-              this.renderParagraph(context, textContent || ' ');
+              this.renderParagraph(context, textContent || ' ', { indent: 16 });
               break;
           }
 
@@ -350,7 +353,7 @@ export class AppShellComponent implements OnInit {
   }
 
   private addHeader(context: PdfRenderContext): void {
-    const { pdf, layout, pageWidth, exportedAt } = context;
+    const { pdf, layout, pageWidth } = context;
 
     if (context.leftLogo) {
       const targetHeight = 20;
@@ -397,7 +400,7 @@ export class AppShellComponent implements OnInit {
     const fontSize = 12;
     const lineHeight = 16;
     const paddingX = 12;
-    const paddingY = 8;
+    const paddingY = 7;
     const boxWidth = context.contentWidth;
 
     context.pdf.setFont(context.theme.fontFamily, 'bold');
@@ -416,8 +419,8 @@ export class AppShellComponent implements OnInit {
       context.y,
       boxWidth,
       boxHeight,
-      6,
-      6,
+      5,
+      5,
       'FD'
     );
 
@@ -427,15 +430,17 @@ export class AppShellComponent implements OnInit {
       textY += lineHeight;
     }
 
-    context.y += boxHeight + 10;
+    context.y += boxHeight + 8;
   }
 
-  private renderHeading(context: PdfRenderContext, text: string, level: number): void {
+  private renderHeading(context: PdfRenderContext, text: string, level: number, indent = 0): void {
     if (!text.trim()) return;
 
     const normalizedLevel = Math.min(Math.max(level || 1, 1), 3);
     const size = normalizedLevel === 1 ? 20 : normalizedLevel === 2 ? 16 : 14;
-    const lineHeight = size + 6;
+    const lineHeight = size + 5;
+    const startX = context.layout.marginLeft + indent;
+    const width = Math.max(context.contentWidth - indent * 2, 120);
 
     context.y += normalizedLevel === 1 ? 8 : 4;
     this.ensureSpace(context, lineHeight + context.layout.sectionGap);
@@ -444,14 +449,14 @@ export class AppShellComponent implements OnInit {
     context.pdf.setFontSize(size);
     this.setTextColor(context, context.theme.textColor);
 
-    const lines = context.pdf.splitTextToSize(text, context.contentWidth);
+    const lines = context.pdf.splitTextToSize(text, width);
     for (const line of lines) {
       this.ensureSpace(context, lineHeight);
-      context.pdf.text(line, context.layout.marginLeft, context.y);
+      context.pdf.text(line, startX, context.y);
       context.y += lineHeight;
     }
 
-    context.y += 6;
+    context.y += 5;
   }
 
   private renderParagraph(
@@ -461,6 +466,8 @@ export class AppShellComponent implements OnInit {
       size?: number;
       style?: 'normal' | 'bold' | 'italic';
       color?: number[];
+      indent?: number;
+      lineHeight?: number;
     }
   ): void {
     if (!text.trim()) return;
@@ -468,22 +475,25 @@ export class AppShellComponent implements OnInit {
     const fontSize = options?.size ?? 12;
     const fontStyle = options?.style ?? 'normal';
     const color = options?.color ?? context.theme.textColor;
-    const lineHeight = fontSize === 10 ? 14 : 18;
+    const indent = options?.indent ?? 0;
+    const lineHeight = options?.lineHeight ?? (fontSize === 10 ? 14 : 17);
+    const startX = context.layout.marginLeft + indent;
+    const width = Math.max(context.contentWidth - indent * 2, 120);
 
     context.pdf.setFont(context.theme.fontFamily, fontStyle);
     context.pdf.setFontSize(fontSize);
     this.setTextColor(context, color);
 
-    const lines = context.pdf.splitTextToSize(text, context.contentWidth);
-    this.ensureSpace(context, lines.length * lineHeight + 6);
+    const lines = context.pdf.splitTextToSize(text, width);
+    this.ensureSpace(context, lines.length * lineHeight + 5);
 
     for (const line of lines) {
       this.ensureSpace(context, lineHeight);
-      context.pdf.text(line, context.layout.marginLeft, context.y);
+      context.pdf.text(line, startX, context.y);
       context.y += lineHeight;
     }
 
-    context.y += 6;
+    context.y += 5;
   }
 
   private renderRichText(
@@ -493,6 +503,8 @@ export class AppShellComponent implements OnInit {
       size?: number;
       style?: 'normal' | 'bold' | 'italic';
       color?: number[];
+      indent?: number;
+      lineHeight?: number;
     }
   ): void {
     const runs = this.extractStyledRunsFromHtml(
@@ -506,9 +518,12 @@ export class AppShellComponent implements OnInit {
     }
 
     const fontSize = options?.size ?? 12;
-    const lineHeight = fontSize === 10 ? 14 : 18;
-    const maxX = context.pageWidth - context.layout.marginRight;
-    let x = context.layout.marginLeft;
+    const indent = options?.indent ?? 0;
+    const lineHeight = options?.lineHeight ?? (fontSize === 10 ? 14 : 17);
+    const leftX = context.layout.marginLeft + indent;
+    const textWidth = Math.max(context.contentWidth - indent * 2, 120);
+    const maxX = leftX + textWidth;
+    let x = leftX;
     let drewAny = false;
 
     this.ensureSpace(context, lineHeight + 6);
@@ -516,7 +531,7 @@ export class AppShellComponent implements OnInit {
     const startNewLine = (): void => {
       context.y += lineHeight;
       this.ensureSpace(context, lineHeight);
-      x = context.layout.marginLeft;
+      x = leftX;
     };
 
     const drawSegment = (segment: string, run: PdfTextRun): void => {
@@ -557,7 +572,7 @@ export class AppShellComponent implements OnInit {
 
         for (const part of parts) {
           const isWhitespace = /^\s+$/.test(part);
-          if (isWhitespace && x === context.layout.marginLeft) {
+          if (isWhitespace && x === leftX) {
             continue;
           }
 
@@ -591,13 +606,13 @@ export class AppShellComponent implements OnInit {
             }
 
             // If we're not at line start, move the token to the next line first.
-            if (x > context.layout.marginLeft) {
+            if (x > leftX) {
               startNewLine();
               continue;
             }
 
             // Hard-wrap long unbroken tokens by character width.
-            const chunks = context.pdf.splitTextToSize(remaining, context.contentWidth);
+            const chunks = context.pdf.splitTextToSize(remaining, textWidth);
             const chunk = (chunks && chunks[0]) ? String(chunks[0]) : remaining.charAt(0);
             drawSegment(chunk, run);
             remaining = remaining.slice(chunk.length);
@@ -616,24 +631,24 @@ export class AppShellComponent implements OnInit {
     }
 
     if (drewAny) {
-      context.y += lineHeight + 6;
+      context.y += lineHeight + 5;
     }
     this.setTextColor(context, context.theme.textColor);
   }
 
-  private async renderImage(context: PdfRenderContext, imageUrl: string, maxImageHeight = 260): Promise<boolean> {
+  private async renderImage(context: PdfRenderContext, imageUrl: string, maxImageHeight = 260, indent = 0): Promise<boolean> {
     const imageData = await this.loadImageForPdf(imageUrl);
     if (!imageData) {
       return false;
     }
 
-    const maxWidth = context.contentWidth;
+    const maxWidth = Math.max(context.contentWidth - indent * 2, 120);
     const widthRatio = maxWidth / imageData.width;
     const heightRatio = maxImageHeight / imageData.height;
     const scale = Math.min(widthRatio, heightRatio, 1);
     const drawWidth = imageData.width * scale;
     const drawHeight = imageData.height * scale;
-    const x = context.layout.marginLeft + (context.contentWidth - drawWidth) / 2;
+    const x = context.layout.marginLeft + indent + (maxWidth - drawWidth) / 2;
 
     this.ensureSpace(context, drawHeight + 16);
     context.pdf.addImage(imageData.dataUrl, imageData.format, x, context.y, drawWidth, drawHeight);
@@ -654,7 +669,7 @@ export class AppShellComponent implements OnInit {
 
       const footerY = context.pageHeight - context.layout.marginBottom + 16;
       this.setStrokeColor(context, context.theme.mutedColor);
-      context.pdf.setLineWidth(0.7);
+      context.pdf.setLineWidth(0.6);
       context.pdf.line(
         context.layout.marginLeft,
         context.pageHeight - context.layout.marginBottom,
@@ -663,9 +678,9 @@ export class AppShellComponent implements OnInit {
       );
 
       context.pdf.setFont(context.theme.fontFamily, 'normal');
-      context.pdf.setFontSize(10);
+      context.pdf.setFontSize(9);
       this.setTextColor(context, context.theme.mutedColor);
-      context.pdf.text(`Page ${page} of ${totalPages}`, context.pageWidth / 2, footerY, { align: 'center' });
+      context.pdf.text(`Page ${page} / ${totalPages}`, context.pageWidth / 2, footerY, { align: 'center' });
     }
   }
 

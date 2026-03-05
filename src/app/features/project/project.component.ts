@@ -313,6 +313,9 @@ export class ProjectComponent implements OnInit {
     const footerHeight = 20;
     const blockGap = 16;
     const contentWidth = pageWidth - marginLeft - marginRight;
+    const sectionGapSmall = 6;
+    const sectionGapMedium = 10;
+    const sectionGapLarge = 18;
     let y = marginTop + 26;
 
     const setText = (color: number[]): void => {
@@ -404,7 +407,7 @@ export class ProjectComponent implements OnInit {
       if (!clean) return;
 
       const startX = marginLeft + indent;
-      const width = contentWidth - indent;
+      const width = Math.max(contentWidth - indent * 2, 120);
       pdf.setFont('helvetica', style);
       pdf.setFontSize(size);
       setText(color);
@@ -434,9 +437,9 @@ export class ProjectComponent implements OnInit {
 
       const indent = options.indent ?? 0;
       const paddingX = 12;
-      const paddingY = 6;
+      const paddingY = 7;
       const boxX = marginLeft + indent;
-      const boxWidth = contentWidth - indent;
+      const boxWidth = Math.max(contentWidth - indent * 2, 120);
 
       pdf.setFont('helvetica', 'bold');
       pdf.setFontSize(options.size);
@@ -450,7 +453,7 @@ export class ProjectComponent implements OnInit {
       setFill(options.backgroundColor || theme.sectionBg);
       setStroke(theme.border);
       pdf.setLineWidth(0.6);
-      pdf.roundedRect(boxX, y, boxWidth, boxHeight, 6, 6, 'FD');
+      pdf.roundedRect(boxX, y, boxWidth, boxHeight, 5, 5, 'FD');
 
       let textY = y + paddingY + options.lineHeight - 4;
       for (const line of lines) {
@@ -458,7 +461,7 @@ export class ProjectComponent implements OnInit {
         textY += options.lineHeight;
       }
 
-      y += boxHeight + 10;
+      y += boxHeight + 8;
     };
 
     const divider = (gapBefore = 8, gapAfter = 20): void => {
@@ -492,7 +495,7 @@ export class ProjectComponent implements OnInit {
       }
 
       const left = marginLeft + options.indent;
-      const width = contentWidth - options.indent;
+      const width = Math.max(contentWidth - options.indent * 2, 120);
       const right = left + width;
       let x = left;
       let drewAny = false;
@@ -612,7 +615,7 @@ export class ProjectComponent implements OnInit {
         return;
       }
 
-      const maxWidth = contentWidth - indent;
+      const maxWidth = Math.max(contentWidth - indent * 2, 120);
       const maxHeight = 250;
       const widthRatio = maxWidth / imageData.width;
       const heightRatio = maxHeight / imageData.height;
@@ -647,16 +650,16 @@ export class ProjectComponent implements OnInit {
     const totalPages = documentsWithPages.reduce((sum, doc) => sum + doc.pages.length, 0);
     drawHeader();
     const safeProjectTitle = this.sanitizePdfText(project.name || '') || 'Project Export';
-    writeWrapped(safeProjectTitle, 24, 'bold', 30, theme.brand, 0);
+    writeWrapped(safeProjectTitle, 22, 'bold', 28, theme.brand, 0);
     writeWrapped(
       `Folders ${folders.length} | Documents ${documentsWithPages.length} | Pages ${totalPages}`,
-      11,
+      10,
       'normal',
-      16,
+      14,
       theme.muted,
       0
     );
-    divider(10, 24);
+    divider(sectionGapMedium, sectionGapLarge);
 
     for (const folder of folders) {
       renderBandHeader(`Folder: ${folder.name}`, {
@@ -672,8 +675,8 @@ export class ProjectComponent implements OnInit {
       );
 
       if (folderDocs.length === 0) {
-        writeWrapped('(No documents)', 11, 'italic', 16, theme.muted, 12);
-        y += 4;
+        writeWrapped('No documents', 11, 'italic', 16, theme.muted, 12);
+        y += sectionGapSmall;
         continue;
       }
 
@@ -685,20 +688,24 @@ export class ProjectComponent implements OnInit {
           textColor: theme.text,
           backgroundColor: [252, 253, 255]
         });
-        writeWrapped(`Updated ${new Date(doc.updatedAt).toLocaleString()}`, 10, 'normal', 14, theme.muted, 12);
-
         if (!doc.pages || doc.pages.length === 0) {
-          writeWrapped('(No pages)', 11, 'italic', 15, theme.muted, 24);
-          y += 3;
+          writeWrapped('No pages', 11, 'italic', 15, theme.muted, 24);
+          y += sectionGapSmall;
           continue;
         }
 
         for (const page of doc.pages.sort((a, b) => a.order - b.order)) {
-          writeWrapped(`Page: ${page.title || 'Untitled page'}`, 11, 'bold', 16, theme.text, 24);
+          renderBandHeader(`Page: ${page.title || 'Untitled page'}`, {
+            size: 11,
+            lineHeight: 15,
+            indent: 24,
+            textColor: theme.text,
+            backgroundColor: [250, 252, 255]
+          });
 
           const blocks = [...(page.content?.blocks || [])].sort((a, b) => a.order - b.order);
           if (blocks.length === 0) {
-            writeWrapped('(No content)', 10, 'italic', 14, theme.muted, 36);
+            writeWrapped('No content', 10, 'italic', 14, theme.muted, 36);
             continue;
           }
 
@@ -726,7 +733,7 @@ export class ProjectComponent implements OnInit {
                   36
                 );
               } else {
-                writeWrapped('Image block (no URL)', 10, 'italic', 14, theme.muted, 36);
+                writeWrapped('Image unavailable', 10, 'italic', 14, theme.muted, 36);
               }
               continue;
             }
@@ -734,9 +741,9 @@ export class ProjectComponent implements OnInit {
             if (block.type === 'gallery') {
               const galleryItems = Array.isArray(block.content) ? block.content : [];
               if (galleryItems.length === 0) {
-                writeWrapped('Gallery - 0 image(s)', 10, 'italic', 14, theme.muted, 36);
+                writeWrapped('Gallery: no images', 10, 'italic', 14, theme.muted, 36);
               } else {
-                writeWrapped(`Gallery - ${galleryItems.length} image(s)`, 10, 'italic', 14, theme.muted, 36);
+                writeWrapped(`Gallery: ${galleryItems.length} image(s)`, 10, 'italic', 14, theme.muted, 36);
                 for (const item of galleryItems) {
                   const itemUrl = typeof item?.url === 'string' ? item.url : '';
                   if (!itemUrl) {
@@ -754,12 +761,12 @@ export class ProjectComponent implements OnInit {
             }
 
             if (block.type === 'divider') {
-              y += 3;
-              ensureSpace(10);
+              y += sectionGapSmall;
+              ensureSpace(sectionGapMedium);
               setStroke(theme.border);
               pdf.setLineWidth(0.6);
-              pdf.line(marginLeft + 36, y, pageWidth - marginRight, y);
-              y += 7;
+              pdf.line(marginLeft + 36, y, pageWidth - marginRight - 36, y);
+              y += sectionGapMedium;
               continue;
             }
 
@@ -789,32 +796,32 @@ export class ProjectComponent implements OnInit {
                   color: theme.text
                 });
               } else {
-                writeWrapped(text || '(empty)', 12, 'normal', 18, theme.text, 36);
+                writeWrapped(text || '', 12, 'normal', 18, theme.text, 36);
               }
               continue;
             }
 
-            writeWrapped(text || '(empty)', 12, 'normal', 18, theme.text, 36);
+            writeWrapped(text || '', 12, 'normal', 18, theme.text, 36);
           }
 
         }
 
-        y += 6;
+        y += sectionGapMedium;
       }
 
-      divider(8, 22);
+      divider(sectionGapSmall, sectionGapLarge);
     }
 
     const pages = pdf.getNumberOfPages();
     for (let pageNum = 1; pageNum <= pages; pageNum++) {
       pdf.setPage(pageNum);
       setStroke(theme.border);
-      pdf.setLineWidth(0.7);
+      pdf.setLineWidth(0.6);
       pdf.line(marginLeft, pageHeight - marginBottom, pageWidth - marginRight, pageHeight - marginBottom);
       setText(theme.muted);
       pdf.setFont('helvetica', 'normal');
-      pdf.setFontSize(10);
-      pdf.text(`Page ${pageNum} of ${pages}`, pageWidth / 2, pageHeight - marginBottom + 16, {
+      pdf.setFontSize(9);
+      pdf.text(`Page ${pageNum} / ${pages}`, pageWidth / 2, pageHeight - marginBottom + 16, {
         align: 'center'
       });
     }
