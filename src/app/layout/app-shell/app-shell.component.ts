@@ -5,6 +5,7 @@ import { firstValueFrom } from 'rxjs';
 import { jsPDF } from 'jspdf';
 import { DocumentService } from 'src/app/core/services/document.service';
 import { PageService } from 'src/app/core/services/page.service';
+import { Page } from 'src/app/core/models/page.model';
 
 interface PdfTheme {
   primaryColor: number[];
@@ -62,6 +63,10 @@ export class AppShellComponent implements OnInit {
   private readonly rightHeaderLogoPath = encodeURI('assets/KELLTON2.svg');
   // Set this to a base64 data URI (e.g. data:image/png;base64,...) to show a logo in PDF headers.
   private readonly pdfLogoBase64: string | null = null;
+  private pdfImagePromiseCache = new Map<
+    string,
+    Promise<{ dataUrl: string; width: number; height: number; format: 'PNG' | 'JPEG' } | null>
+  >();
   
   constructor(
     private router: Router,
@@ -102,12 +107,57 @@ export class AppShellComponent implements OnInit {
 
     try {
       const pages = await firstValueFrom(this.pageService.getPagesByDocument(this.currentDocId));
-      const sortedPages = [...pages].sort((a, b) => a.order - b.order);
+      await this.exportPagesPdf(
+        pages,
+        this.currentDocTitle || 'Untitled',
+        this.getSafeFilename(this.currentDocTitle || 'document')
+      );
+    } catch (error) {
+      console.error('Export PDF failed:', error);
+      alert('Failed to export PDF. Please try again.');
+    }
+  }
 
-      if (sortedPages.length === 0) {
-        alert('This document has no pages to export.');
+  async exportCurrentPagePdf(): Promise<void> {
+    if (!this.currentDocId) {
+      alert('No active document found to export.');
+      return;
+    }
+
+    try {
+      const pages = await firstValueFrom(this.pageService.getPagesByDocument(this.currentDocId));
+      const activePageId = this.pageService.getActivePageId();
+      const activePage = activePageId ? pages.find((p) => p.id === activePageId) : null;
+
+      if (!activePage) {
+        alert('No active page selected to export.');
         return;
       }
+
+      const pageTitle = activePage.title || 'Untitled page';
+      const fileName = `${this.getSafeFilename(this.currentDocTitle || 'document')}-${this.getSafeFilename(pageTitle)}`;
+      await this.exportPagesPdf([activePage], pageTitle, fileName);
+    } catch (error) {
+      console.error('Export current page PDF failed:', error);
+      alert('Failed to export page PDF. Please try again.');
+    }
+  }
+
+  private async exportPagesPdf(
+    pages: Page[],
+    exportTitle: string,
+    fileNameBase: string
+  ): Promise<void> {
+    const sortedPages = [...pages].sort((a, b) => a.order - b.order);
+
+    if (sortedPages.length === 0) {
+      alert('This selection has no pages to export.');
+      return;
+    }
+
+      // Reset per-export cache and preload all content images in parallel.
+      this.pdfImagePromiseCache.clear();
+      await this.preloadPdfImagesForPages(sortedPages);
 
       const pdf = new jsPDF({ unit: 'pt', format: 'a4' });
       const theme = this.applyTheme();
@@ -132,7 +182,7 @@ export class AppShellComponent implements OnInit {
         pdf,
         theme,
         layout,
-        docTitle: this.currentDocTitle || 'Untitled',
+        docTitle: exportTitle || 'Untitled',
         pageWidth: pdf.internal.pageSize.getWidth(),
         pageHeight: pdf.internal.pageSize.getHeight(),
         contentWidth: pdf.internal.pageSize.getWidth() - layout.marginLeft - layout.marginRight,
@@ -313,12 +363,8 @@ export class AppShellComponent implements OnInit {
       }
 
       this.addPageNumbers(context);
-      const safeName = this.getSafeFilename(this.currentDocTitle || 'document');
+      const safeName = this.getSafeFilename(fileNameBase || 'document');
       pdf.save(`${safeName}.pdf`);
-    } catch (error) {
-      console.error('Export PDF failed:', error);
-      alert('Failed to export PDF. Please try again.');
-    }
   }
 
   private applyTheme(): PdfTheme {
@@ -637,7 +683,7 @@ export class AppShellComponent implements OnInit {
   }
 
   private async renderImage(context: PdfRenderContext, imageUrl: string, maxImageHeight = 260, indent = 0): Promise<boolean> {
-    const imageData = await this.loadImageForPdf(imageUrl);
+    const imageData = await this.getPdfImageData(imageUrl);
     if (!imageData) {
       return false;
     }
@@ -733,40 +779,127 @@ export class AppShellComponent implements OnInit {
   }
 
   private loadImageForPdf(imageUrl: string): Promise<{ dataUrl: string; width: number; height: number; format: 'PNG' | 'JPEG' } | null> {
+    const candidates = this.buildPdfImageCandidates(imageUrl);
     return new Promise((resolve) => {
-      const img = new Image();
-      img.crossOrigin = 'anonymous';
-
-      img.onload = () => {
-        try {
-          const canvas = document.createElement('canvas');
-          canvas.width = img.naturalWidth || img.width;
-          canvas.height = img.naturalHeight || img.height;
-
-          const ctx = canvas.getContext('2d');
-          if (!ctx) {
-            resolve(null);
-            return;
-          }
-
-          ctx.drawImage(img, 0, 0);
-          const isPng = imageUrl.startsWith('data:image/png') || imageUrl.endsWith('.png');
-          const mimeType = isPng ? 'image/png' : 'image/jpeg';
-          const dataUrl = canvas.toDataURL(mimeType, 0.9);
-          resolve({
-            dataUrl,
-            width: canvas.width,
-            height: canvas.height,
-            format: isPng ? 'PNG' : 'JPEG'
-          });
-        } catch {
+      const tryLoad = (index: number): void => {
+        if (index >= candidates.length) {
           resolve(null);
+          return;
         }
+
+        const candidate = candidates[index];
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        img.referrerPolicy = 'no-referrer';
+
+        img.onload = () => {
+          try {
+            const canvas = document.createElement('canvas');
+            canvas.width = img.naturalWidth || img.width;
+            canvas.height = img.naturalHeight || img.height;
+
+            const ctx = canvas.getContext('2d');
+            if (!ctx) {
+              tryLoad(index + 1);
+              return;
+            }
+
+            ctx.drawImage(img, 0, 0);
+            const isPng = candidate.startsWith('data:image/png') || candidate.toLowerCase().endsWith('.png');
+            const mimeType = isPng ? 'image/png' : 'image/jpeg';
+            const dataUrl = canvas.toDataURL(mimeType, 0.9);
+            resolve({
+              dataUrl,
+              width: canvas.width,
+              height: canvas.height,
+              format: isPng ? 'PNG' : 'JPEG'
+            });
+          } catch {
+            tryLoad(index + 1);
+          }
+        };
+
+        img.onerror = () => tryLoad(index + 1);
+        img.src = candidate;
       };
 
-      img.onerror = () => resolve(null);
-      img.src = imageUrl;
+      tryLoad(0);
     });
+  }
+
+  private getPdfImageData(imageUrl: string): Promise<{ dataUrl: string; width: number; height: number; format: 'PNG' | 'JPEG' } | null> {
+    const key = (imageUrl || '').trim();
+    if (!key) {
+      return Promise.resolve(null);
+    }
+
+    const cached = this.pdfImagePromiseCache.get(key);
+    if (cached) {
+      return cached;
+    }
+
+    const task = this.loadImageForPdf(key).catch(() => null);
+    this.pdfImagePromiseCache.set(key, task);
+    return task;
+  }
+
+  private async preloadPdfImagesForPages(pages: Page[]): Promise<void> {
+    const urls = new Set<string>();
+
+    for (const page of pages) {
+      const blocks = Array.isArray(page?.content?.blocks) ? page.content.blocks : [];
+      for (const block of blocks) {
+        if (block?.type === 'image') {
+          const image = this.getImageBlockData(block);
+          if (image.url) urls.add(image.url);
+          continue;
+        }
+
+        if (block?.type === 'gallery') {
+          const galleryItems = Array.isArray(block?.content) ? block.content : [];
+          for (const item of galleryItems) {
+            const itemUrl = typeof item?.url === 'string' ? item.url.trim() : '';
+            if (itemUrl) urls.add(itemUrl);
+          }
+        }
+      }
+    }
+
+    if (urls.size === 0) {
+      return;
+    }
+
+    await Promise.all(Array.from(urls).map((url) => this.getPdfImageData(url)));
+  }
+
+  private buildPdfImageCandidates(imageUrl: string): string[] {
+    const value = (imageUrl || '').trim();
+    if (!value) return [];
+
+    const out = [value];
+    if (this.isHttpImageUrl(value) && !this.isProxyUrl(value)) {
+      out.push(this.toPdfProxyUrl(value));
+    }
+
+    return Array.from(new Set(out));
+  }
+
+  private isHttpImageUrl(url: string): boolean {
+    return /^https?:\/\//i.test(url || '');
+  }
+
+  private isProxyUrl(url: string): boolean {
+    return /images\.weserv\.nl\/\?url=/i.test(url || '');
+  }
+
+  private toPdfProxyUrl(url: string): string {
+    try {
+      const parsed = new URL(url);
+      const stripped = `${parsed.host}${parsed.pathname}${parsed.search}`;
+      return `https://images.weserv.nl/?url=${encodeURIComponent(stripped)}`;
+    } catch {
+      return url;
+    }
   }
 
   private htmlToPlainText(input: string, preserveLineBreaks = false): string {

@@ -34,6 +34,10 @@ export class ProjectComponent implements OnInit {
   folders: Folder[] = [];
   documents: Document[] = [];
   activeFolderId: string | null = null;
+  private pdfImagePromiseCache = new Map<
+    string,
+    Promise<{ dataUrl: string; width: number; height: number; format: 'PNG' | 'JPEG' } | null>
+  >();
 
   // Inline inputs
   showNewFolderInput = false;
@@ -292,6 +296,9 @@ export class ProjectComponent implements OnInit {
     folders: Folder[],
     documentsWithPages: Array<Document & { pages: Page[] }>
   ): Promise<void> {
+    this.pdfImagePromiseCache.clear();
+    await this.preloadProjectPdfImages(documentsWithPages);
+
     const pdf = new jsPDF({ unit: 'pt', format: 'a4' });
     const coverImagePath = encodeURI('assets/Optima User Manual page.jpg');
     const leftHeaderLogoPath = encodeURI('assets/OPTIMANEW.svg');
@@ -609,7 +616,7 @@ export class ProjectComponent implements OnInit {
     };
 
     const renderImage = async (imageUrl: string, caption?: string, indent = 36): Promise<void> => {
-      const imageData = await this.loadImageForPdf(imageUrl);
+      const imageData = await this.getPdfImageData(imageUrl);
       if (!imageData) {
         writeWrapped('[Image could not be embedded]', 10, 'italic', 14, theme.muted, indent);
         return;
@@ -886,37 +893,134 @@ export class ProjectComponent implements OnInit {
   }
 
   private loadImageForPdf(imageUrl: string): Promise<{ dataUrl: string; width: number; height: number; format: 'PNG' | 'JPEG' } | null> {
+    const candidates = this.buildPdfImageCandidates(imageUrl);
     return new Promise((resolve) => {
-      const img = new Image();
-      img.crossOrigin = 'anonymous';
-
-      img.onload = () => {
-        try {
-          const canvas = document.createElement('canvas');
-          canvas.width = img.naturalWidth || img.width;
-          canvas.height = img.naturalHeight || img.height;
-          const ctx = canvas.getContext('2d');
-          if (!ctx) {
-            resolve(null);
-            return;
-          }
-          ctx.drawImage(img, 0, 0);
-          const isPng = imageUrl.startsWith('data:image/png') || imageUrl.toLowerCase().endsWith('.png');
-          const format: 'PNG' | 'JPEG' = isPng ? 'PNG' : 'JPEG';
-          resolve({
-            dataUrl: canvas.toDataURL(isPng ? 'image/png' : 'image/jpeg', 0.92),
-            width: canvas.width,
-            height: canvas.height,
-            format
-          });
-        } catch {
+      const tryLoad = (index: number): void => {
+        if (index >= candidates.length) {
           resolve(null);
+          return;
         }
+
+        const candidate = candidates[index];
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        img.referrerPolicy = 'no-referrer';
+
+        img.onload = () => {
+          try {
+            const canvas = document.createElement('canvas');
+            canvas.width = img.naturalWidth || img.width;
+            canvas.height = img.naturalHeight || img.height;
+            const ctx = canvas.getContext('2d');
+            if (!ctx) {
+              tryLoad(index + 1);
+              return;
+            }
+            ctx.drawImage(img, 0, 0);
+            const isPng = candidate.startsWith('data:image/png') || candidate.toLowerCase().endsWith('.png');
+            const format: 'PNG' | 'JPEG' = isPng ? 'PNG' : 'JPEG';
+            resolve({
+              dataUrl: canvas.toDataURL(isPng ? 'image/png' : 'image/jpeg', 0.92),
+              width: canvas.width,
+              height: canvas.height,
+              format
+            });
+          } catch {
+            tryLoad(index + 1);
+          }
+        };
+
+        img.onerror = () => tryLoad(index + 1);
+        img.src = candidate;
       };
 
-      img.onerror = () => resolve(null);
-      img.src = imageUrl;
+      tryLoad(0);
     });
+  }
+
+  private getPdfImageData(imageUrl: string): Promise<{ dataUrl: string; width: number; height: number; format: 'PNG' | 'JPEG' } | null> {
+    const key = (imageUrl || '').trim();
+    if (!key) {
+      return Promise.resolve(null);
+    }
+
+    const cached = this.pdfImagePromiseCache.get(key);
+    if (cached) {
+      return cached;
+    }
+
+    const task = this.loadImageForPdf(key).catch(() => null);
+    this.pdfImagePromiseCache.set(key, task);
+    return task;
+  }
+
+  private async preloadProjectPdfImages(
+    documentsWithPages: Array<Document & { pages: Page[] }>
+  ): Promise<void> {
+    const urls = new Set<string>();
+
+    for (const doc of documentsWithPages) {
+      const pages = Array.isArray(doc.pages) ? doc.pages : [];
+      for (const page of pages) {
+        const blocks = Array.isArray(page?.content?.blocks) ? page.content.blocks : [];
+        for (const block of blocks) {
+          if (block?.type === 'image') {
+            const image = this.getImageBlockData(block);
+            if (image.url) {
+              urls.add(image.url);
+            }
+            continue;
+          }
+
+          if (block?.type === 'gallery') {
+            const galleryItems = Array.isArray(block.content) ? block.content : [];
+            for (const item of galleryItems) {
+              const itemUrl = typeof item?.url === 'string' ? item.url.trim() : '';
+              if (itemUrl) {
+                urls.add(itemUrl);
+              }
+            }
+          }
+        }
+      }
+    }
+
+    if (urls.size === 0) {
+      return;
+    }
+
+    await Promise.all(Array.from(urls).map((url) => this.getPdfImageData(url)));
+  }
+
+  private buildPdfImageCandidates(imageUrl: string): string[] {
+    const value = (imageUrl || '').trim();
+    if (!value) return [];
+
+    const out = [value];
+    if (this.isHttpImageUrl(value) && !this.isProxyUrl(value)) {
+      out.push(this.toPdfProxyUrl(value));
+    }
+
+    // Keep order but remove duplicates.
+    return Array.from(new Set(out));
+  }
+
+  private isHttpImageUrl(url: string): boolean {
+    return /^https?:\/\//i.test(url || '');
+  }
+
+  private isProxyUrl(url: string): boolean {
+    return /images\.weserv\.nl\/\?url=/i.test(url || '');
+  }
+
+  private toPdfProxyUrl(url: string): string {
+    try {
+      const parsed = new URL(url);
+      const stripped = `${parsed.host}${parsed.pathname}${parsed.search}`;
+      return `https://images.weserv.nl/?url=${encodeURIComponent(stripped)}`;
+    } catch {
+      return url;
+    }
   }
 
   private htmlToPlainText(input: string, preserveLineBreaks = false): string {

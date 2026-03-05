@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-drop';
 import { DocumentService } from 'src/app/core/services/document.service';
@@ -11,7 +11,7 @@ import { Page } from 'src/app/core/models/page.model';
   templateUrl: './document-editor.component.html',
   styleUrls: ['./document-editor.component.css']
 })
-export class DocumentEditorComponent implements OnInit {
+export class DocumentEditorComponent implements OnInit, OnDestroy {
 
   document: Document | null = null;
   pages: Page[] = [];
@@ -35,9 +35,14 @@ export class DocumentEditorComponent implements OnInit {
       this.document = null;
       this.pages = [];
       this.selectedPage = null;
+      this.pageService.setActivePageId(null);
       this.loadDocument(documentId);
       this.loadPages(documentId);
     });
+  }
+
+  ngOnDestroy(): void {
+    this.pageService.setActivePageId(null);
   }
 
   loadDocument(documentId: string): void {
@@ -61,6 +66,7 @@ export class DocumentEditorComponent implements OnInit {
 
   selectPage(page: Page): void {
     this.selectedPage = JSON.parse(JSON.stringify(page));
+    this.pageService.setActivePageId(page.id);
   }
 
   addPage(): void {

@@ -47,6 +47,7 @@ export class BlockEditorComponent implements OnInit, OnChanges, OnDestroy {
   >();
   private imageLoadRetry = new Map<string, number>();
   private imageOriginalUrl = new Map<string, string>();
+  private idCounter = 0;
 
   blockTypes: BlockMenuItem[] = [
     {
@@ -156,6 +157,7 @@ export class BlockEditorComponent implements OnInit, OnChanges, OnDestroy {
     // Ensure each block has required properties
     this.blocks.forEach((block, index) => {
       if (!block.id) block.id = this.generateBlockId(block.type);
+      if (!block.blockId) block.blockId = `block-${block.id}`;
       if (block.order === undefined) block.order = index;
       if (block.type === 'image') {
         this.normalizeImageBlock(block);
@@ -203,6 +205,7 @@ export class BlockEditorComponent implements OnInit, OnChanges, OnDestroy {
 
     const newBlock: ContentBlock = {
       id: this.generateBlockId(type as BlockType),
+      blockId: this.generateBlockGroupId(),
       type: type as BlockType,
       content: listContent,
       order: this.blocks.length,
@@ -243,6 +246,32 @@ export class BlockEditorComponent implements OnInit, OnChanges, OnDestroy {
     this.debouncedSavePage();
   }
 
+  onPaste(blockId: string, event: ClipboardEvent): void {
+    const clipboard = event.clipboardData;
+    if (!clipboard) return;
+
+    const html = clipboard.getData('text/html');
+    const text = clipboard.getData('text/plain') || '';
+    if (!html && !text) return;
+
+    event.preventDefault();
+
+    const sanitizedHtml = html
+      ? this.normalizeEditableHtml(html)
+      : this.escapeHtml(text).replace(/\n/g, '<br>');
+
+    document.execCommand('insertHTML', false, sanitizedHtml);
+
+    const target = event.target as HTMLElement;
+    const content = this.normalizeEditableHtml(target?.innerHTML || '');
+    const block = this.blocks.find((b) => b.id === blockId);
+    if (block) {
+      block.content = content;
+      this.pendingBlockContent.set(blockId, content);
+    }
+    this.debouncedSavePage();
+  }
+
   deleteBlock(blockId: string): void {
     this.blocks = this.blocks.filter((b) => b.id !== blockId);
     this.reorderBlocks();
@@ -255,6 +284,7 @@ export class BlockEditorComponent implements OnInit, OnChanges, OnDestroy {
       const duplicate: ContentBlock = {
         ...JSON.parse(JSON.stringify(block)), // Deep clone
         id: this.generateBlockId(block.type),
+        blockId: block.blockId || this.generateBlockGroupId(),
         order: block.order + 1,
       };
       this.blocks.splice(block.order + 1, 0, duplicate);
@@ -269,6 +299,7 @@ export class BlockEditorComponent implements OnInit, OnChanges, OnDestroy {
 
     const newBlock: ContentBlock = {
       id: this.generateBlockId('text'),
+      blockId: block.blockId || this.generateBlockGroupId(),
       type: 'text',
       content: '',
       order: block.order + 1,
@@ -309,7 +340,35 @@ export class BlockEditorComponent implements OnInit, OnChanges, OnDestroy {
   }
 
   dropBlock(event: CdkDragDrop<ContentBlock[]>): void {
-    moveItemInArray(this.blocks, event.previousIndex, event.currentIndex);
+    const dragged = this.blocks[event.previousIndex];
+    if (!dragged) return;
+
+    const groupId = dragged.blockId || `block-${dragged.id}`;
+    const groupIndices = this.blocks
+      .map((block, index) => ({
+        index,
+        groupId: block.blockId || `block-${block.id}`,
+      }))
+      .filter((entry) => entry.groupId === groupId)
+      .map((entry) => entry.index);
+
+    // Prevent cross-group interleaving from drag and drop.
+    if (!groupIndices.includes(event.currentIndex)) {
+      return;
+    }
+
+    const fromInGroup = groupIndices.indexOf(event.previousIndex);
+    const toInGroup = groupIndices.indexOf(event.currentIndex);
+    if (fromInGroup === -1 || toInGroup === -1 || fromInGroup === toInGroup) {
+      return;
+    }
+
+    const groupBlocks = groupIndices.map((idx) => this.blocks[idx]);
+    moveItemInArray(groupBlocks, fromInGroup, toInGroup);
+    groupIndices.forEach((globalIndex, localIndex) => {
+      this.blocks[globalIndex] = groupBlocks[localIndex];
+    });
+
     this.reorderBlocks();
     this.savePage();
   }
@@ -505,6 +564,7 @@ export class BlockEditorComponent implements OnInit, OnChanges, OnDestroy {
 
     const newBlock: ContentBlock = {
       id: this.generateBlockId(type),
+      blockId: afterBlock.blockId || this.generateBlockGroupId(),
       type: type,
       content: '',
       order: afterBlock.order + 1,
@@ -586,6 +646,7 @@ export class BlockEditorComponent implements OnInit, OnChanges, OnDestroy {
         if (isEmpty) {
           activeBlock.type = type;
           activeBlock.id = this.generateBlockId(type);
+          activeBlock.blockId = activeBlock.blockId || this.generateBlockGroupId();
           if (level) activeBlock.level = level;
           activeBlock.content = listContent;
           this.savePage();
@@ -607,6 +668,7 @@ export class BlockEditorComponent implements OnInit, OnChanges, OnDestroy {
       if (activeBlock) {
         const newBlock: ContentBlock = {
           id: this.generateBlockId(type),
+          blockId: activeBlock.blockId || this.generateBlockGroupId(),
           type: type,
           content: listContent,
           order: activeBlock.order + 1,
@@ -838,6 +900,7 @@ export class BlockEditorComponent implements OnInit, OnChanges, OnDestroy {
               const image = this.getImageContent(block);
               return {
                 id: block.id,
+                blockId: block.blockId || `block-${block.id}`,
                 type: block.type,
                 content: image,
                 order: block.order,
@@ -846,6 +909,7 @@ export class BlockEditorComponent implements OnInit, OnChanges, OnDestroy {
 
             return {
               id: block.id,
+              blockId: block.blockId || `block-${block.id}`,
               type: block.type,
               content: this.pendingBlockContent.has(block.id)
                 ? this.pendingBlockContent.get(block.id)
@@ -879,7 +943,7 @@ export class BlockEditorComponent implements OnInit, OnChanges, OnDestroy {
   }
 
   private normalizeEditableHtml(html: string): string {
-    const normalized = html.replace(/\u00a0/g, ' ').trim();
+    const normalized = this.sanitizePastedHtml(html).replace(/\u00a0/g, ' ').trim();
 
     if (
       normalized === '<br>' ||
@@ -890,6 +954,44 @@ export class BlockEditorComponent implements OnInit, OnChanges, OnDestroy {
     }
 
     return normalized;
+  }
+
+  private sanitizePastedHtml(html: string): string {
+    if (!html || typeof document === 'undefined') {
+      return html || '';
+    }
+
+    const container = document.createElement('div');
+    container.innerHTML = html;
+
+    container.querySelectorAll('img').forEach((img) => {
+      img.removeAttribute('width');
+      img.removeAttribute('height');
+      img.style.maxWidth = '100%';
+      img.style.width = 'auto';
+      img.style.height = 'auto';
+    });
+
+    // Remove source-tool metadata attributes that are not needed in editor.
+    container.querySelectorAll('[data-coda-env],[data-coda-doc-id],[data-coda-blob-id],[data-coda-blob-hash],[data-coda-mime-type],[data-coda-size]').forEach((el) => {
+      el.removeAttribute('data-coda-env');
+      el.removeAttribute('data-coda-doc-id');
+      el.removeAttribute('data-coda-blob-id');
+      el.removeAttribute('data-coda-blob-hash');
+      el.removeAttribute('data-coda-mime-type');
+      el.removeAttribute('data-coda-size');
+    });
+
+    return container.innerHTML;
+  }
+
+  private escapeHtml(value: string): string {
+    return (value || '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
   }
 
   private normalizeImageUrl(raw: string): string | null {
@@ -1062,7 +1164,12 @@ export class BlockEditorComponent implements OnInit, OnChanges, OnDestroy {
 
   private generateBlockId(type: BlockType): string {
     const safeType = (type || 'text').toLowerCase();
-    return `${safeType}-${Date.now()}`;
+    const unique = `${Date.now()}-${++this.idCounter}-${Math.floor(Math.random() * 10000)}`;
+    return `${safeType}-${unique}`;
+  }
+
+  private generateBlockGroupId(): string {
+    return `block-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
   }
 
   private shouldOpenSlashMenu(range: Range): boolean {

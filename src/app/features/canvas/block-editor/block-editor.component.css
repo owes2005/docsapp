@@ -79,7 +79,7 @@
   display: flex;
   gap: 8px;
   align-items: flex-start;
-  padding: 4px 0;
+  padding: 4px 0 22px 0;
   border-radius: 4px;
   transition: background 0.15s ease;
 }
@@ -209,6 +209,33 @@
 .block-text:empty::before {
   content: attr(data-placeholder);
   color: #c0bfbc;
+}
+
+/* Keep pasted rich-content media responsive inside editable blocks */
+.block-text img,
+.block-heading-1 img,
+.block-heading-2 img,
+.block-heading-3 img {
+  display: block;
+  max-width: 100% !important;
+  width: auto !important;
+  height: auto !important;
+  margin: 10px 0;
+  border-radius: 8px;
+}
+
+.block-text span,
+.block-heading-1 span,
+.block-heading-2 span,
+.block-heading-3 span {
+  max-width: 100%;
+}
+
+.block-text [style*='display: inline-block'],
+.block-heading-1 [style*='display: inline-block'],
+.block-heading-2 [style*='display: inline-block'],
+.block-heading-3 [style*='display: inline-block'] {
+  max-width: 100% !important;
 }
 
 /* Image Block */
@@ -472,7 +499,7 @@
 /* Block Actions - Updated */
 .block-actions {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 4px;
   opacity: 0;
   transition: opacity 0.15s ease;
@@ -506,6 +533,11 @@
 }
 
 .block-action-btn.insert-below {
+  position: absolute;
+  left: 50%;
+  bottom: -12px;
+  transform: translateX(-50%);
+  z-index: 4;
   background: #2563eb;
   border-color: #2563eb;
   color: white;
@@ -514,7 +546,7 @@
 .block-action-btn.insert-below:hover {
   background: #1d4ed8;
   border-color: #1d4ed8;
-  transform: scale(1.1);
+  transform: translateX(-50%) scale(1.1);
 }
 
 .block-action-btn mat-icon {

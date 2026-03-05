@@ -10,13 +10,16 @@ export class TextToolbarComponent implements OnInit, OnDestroy {
   position = { top: 0, left: 0 };
   showBelow = false;
   private selectionTimeout: any;
+  private savedRange: Range | null = null;
+  private activeEditable: HTMLElement | null = null;
+  private readonly selectionChangeHandler = this.handleSelectionChange.bind(this);
 
   ngOnInit(): void {
-    document.addEventListener('selectionchange', this.handleSelectionChange.bind(this));
+    document.addEventListener('selectionchange', this.selectionChangeHandler);
   }
 
   ngOnDestroy(): void {
-    document.removeEventListener('selectionchange', this.handleSelectionChange.bind(this));
+    document.removeEventListener('selectionchange', this.selectionChangeHandler);
     if (this.selectionTimeout) {
       clearTimeout(this.selectionTimeout);
     }
@@ -46,6 +49,8 @@ export class TextToolbarComponent implements OnInit, OnDestroy {
 
     if (!editableParent) {
       this.visible = false;
+      this.savedRange = null;
+      this.activeEditable = null;
       return;
     }
 
@@ -55,6 +60,9 @@ export class TextToolbarComponent implements OnInit, OnDestroy {
       this.visible = false;
       return;
     }
+
+    this.savedRange = range.cloneRange();
+    this.activeEditable = editableParent;
 
     // Toolbar dimensions
     const toolbarWidth = 420;
@@ -127,6 +135,7 @@ export class TextToolbarComponent implements OnInit, OnDestroy {
   }
 
   execCommand(command: string, value?: string): void {
+    this.restoreSelection();
     document.execCommand(command, false, value);
     this.preserveSelection();
   }
@@ -159,6 +168,18 @@ export class TextToolbarComponent implements OnInit, OnDestroy {
         this.updateToolbarPosition();
       }
     }, 10);
+  }
+
+  private restoreSelection(): void {
+    const selection = window.getSelection();
+    if (!selection || !this.savedRange) return;
+
+    if (this.activeEditable) {
+      this.activeEditable.focus();
+    }
+
+    selection.removeAllRanges();
+    selection.addRange(this.savedRange);
   }
 
   @HostListener('mousedown', ['$event'])
