@@ -23,7 +23,7 @@
 
       <div
         class="search-wrapper list-search-wrapper"
-        *ngIf="activeFilter !== 'projects'"
+        *ngIf="searchEnabled"
       >
         <mat-icon class="search-icon">search</mat-icon>
         <input
@@ -88,7 +88,7 @@
       Owned by me
     </button>
     <div class="tab-spacer"></div>
-    <span class="results-count" *ngIf="searchQuery">
+    <span class="results-count" *ngIf="searchEnabled && searchQuery">
       {{ (filteredDocuments$ | async)?.length }} results
     </span>
   </div>
@@ -173,7 +173,7 @@
     </ng-container>
 
     <!-- Projects Section -->
-    <ng-container *ngIf="activeFilter === 'projects' && !searchQuery">
+    <ng-container *ngIf="activeFilter === 'projects'">
       <div class="section">
         <div class="section-header">
           <span class="section-label">Projects</span>

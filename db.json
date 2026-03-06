@@ -122,20 +122,11 @@
               {
                 "itemId": "text-1772704035500",
                 "type": "text",
-                "content": "<div style=\"margin-top: 0.5em; margin-bottom: 0.5em;\"><span style=\"font-weight: bold;\">Create New Device Profile :- </span></div><ul style=\"margin-block-start: 1em;\"><li style=\"list-style-type: disc; margin-top: 0.5em; margin-bottom: 0.5em;\">Login to your Optima instance and navigate to the \"Profiles\" section. Then go to the \"Device Profile\" page.</li><li style=\"list-style-type: disc; margin-top: 0.5em; margin-bottom: 0.5em;\">Click on the \"+\" icon in the top right corner of the table and then select \"Add new Device Profile\".</li></ul>",
+                "content": "<div><span>Create New Device Profile :- </span></div><ul><li>Login to your Optima instance and navigate to the \"Profiles\" section. Then go to the \"Device Profile\" page.</li><li>Click on the \"+\" icon in the top right corner of the table and then select \"Add new Device Profile\".</li></ul>",
                 "url": "",
                 "caption": "",
                 "level": null,
                 "order": 0
-              },
-              {
-                "itemId": "text-1772709521616-3-3736",
-                "type": "text",
-                "content": "",
-                "url": "",
-                "caption": "",
-                "level": null,
-                "order": 1
               },
               {
                 "itemId": "image-1772704083843-1-9587",
@@ -144,16 +135,16 @@
                 "url": "https://codahosted.io/docs/XyXhw4H4wX/blobs/bl-DmPN909W5T/0851c9fb35582199f3cab0b2814b1a6254d98e54529724dec439c195834c42cea2820cb3c457ca8619609dede3fa1b0e8f4956cf67557592e948ec262e515d5e97f1f7c0ffb723ee45e7747e2b40e5ed76b2d0f0be5b03243bc5094a5c49963c47e916a0",
                 "caption": "Screenshot (58).png",
                 "level": null,
-                "order": 2
+                "order": 1
               },
               {
                 "itemId": "text-1772704083843-2-2949",
                 "type": "text",
-                "content": "<div style=\"margin-top: 0.5em; margin-bottom: 0.5em;\">Device Profile Details:</div><div style=\"margin-top: 0.5em; margin-bottom: 0.5em;\">Rule chain - </div><div style=\"margin-top: 0.5em; margin-bottom: 0.5em;\">By default, the Root Rule Chain processes all incoming messages and events for any device. However, the more different device types you have, the more complex your Root Rule Chain may become. Many platform users create their Root Rule Chain for the sole purpose of sending messages to specific rule chains depending on the device type.</div>",
+                "content": "<div>Device Profile Details:</div><div>Rule chain - </div><div>By default, the Root Rule Chain processes all incoming messages and events for any device. However, the more different device types you have, the more complex your Root Rule Chain may become. Many platform users create their Root Rule Chain for the sole purpose of sending messages to specific rule chains depending on the device type.</div>",
                 "url": "",
                 "caption": "",
                 "level": null,
-                "order": 3
+                "order": 2
               },
               {
                 "itemId": "image-1772704083843-3-6198",
@@ -162,7 +153,7 @@
                 "url": "https://codahosted.io/docs/XyXhw4H4wX/blobs/bl-Gil6jRXGX-/94c7bb4497ee93941518bba8b4f95a667a9f088952f325346191a283f52bd5bbe3515ed5d1e5606c0eddb02c335aa6336a0226c82b99136f997c3dec39f0973719d135d402af081b6bdb00af36f7f5cd84757db8b136988bcb3a1751504102e0c738c33f",
                 "caption": "Screenshot (64).png",
                 "level": null,
-                "order": 4
+                "order": 3
               },
               {
                 "itemId": "text-1772704083843-4-3246",
@@ -171,7 +162,7 @@
                 "url": "",
                 "caption": "",
                 "level": null,
-                "order": 5
+                "order": 4
               },
               {
                 "itemId": "image-1772704083843-5-9122",
@@ -180,16 +171,16 @@
                 "url": "https://codahosted.io/docs/XyXhw4H4wX/blobs/bl-B5G2MZ6AcH/3cc3cdde51a539989ddaf4756a9fa49fce6d06bbcfdd2523b09460709c6d14eab47afe2c1368d6951b7879e613580b243cf39d2883e47f81b56f06f6bf10c039de42b35b4aafcf6e09e555aef7abe71129aa98857967b7eec68a702afd0555533e5b5150",
                 "caption": "Screenshot (65).png",
                 "level": null,
-                "order": 6
+                "order": 5
               },
               {
                 "itemId": "text-1772704083843-6-464",
                 "type": "text",
-                "content": "<ul style=\"margin-block-start: 1em;\"><li style=\"list-style-type: disc; margin-top: 0.5em; margin-bottom: 0.5em;\">Enter the details. Click \"Add\" to add the device profile.</li></ul>",
+                "content": "<ul><li>Enter the details. Click \"Add\" to add the device profile.</li></ul>",
                 "url": "",
                 "caption": "",
                 "level": null,
-                "order": 7
+                "order": 6
               },
               {
                 "itemId": "image-1772704083843-7-6393",
@@ -198,16 +189,16 @@
                 "url": "https://codahosted.io/docs/XyXhw4H4wX/blobs/bl-1NTgfUKAc5/12c190cb8bb557b0ec8ab17f67b54aadd723e445d324fa9a2a7f327a6ee78ce81b25ded04a2a8f081015ae6c361b024343014e2cec328fe322f43e76be7c796cc2fecb6eaa9d9bf33aa4561193b0f1d389ecb50c232c90993a63d3a1071ad445b3098f4a",
                 "caption": "Screenshot (59).png",
                 "level": null,
-                "order": 8
+                "order": 7
               },
               {
                 "itemId": "text-1772704083843-8-3286",
                 "type": "text",
-                "content": "<ul style=\"margin-block-start: 1em;\"><li style=\"list-style-type: disc; margin-top: 0.5em; margin-bottom: 0.5em;\">Your first device profile has been added. As new device profile are added, they will be added to the top of the table, since the table sort assets using the time of the creation by default.</li></ul>",
+                "content": "<ul><li>Your first device profile has been added. As new device profile are added, they will be added to the top of the table, since the table sort assets using the time of the creation by default.</li></ul>",
                 "url": "",
                 "caption": "",
                 "level": null,
-                "order": 9
+                "order": 8
               },
               {
                 "itemId": "image-1772704083844-9-1087",
@@ -216,7 +207,7 @@
                 "url": "https://codahosted.io/docs/XyXhw4H4wX/blobs/bl-KqCZwONBIN/604fda584d7dfc382542097b4e66241628d8b43dee2456292e62e65cc9c62f2db67f3b77cc8771927e005a77223675609fddf4fd04a154d957614dcb4431a30c32020184a120574a7f234836cda991a4eaf3f5ace97393774a6483c4d57541fb15d96835",
                 "caption": "Screenshot (60).png",
                 "level": null,
-                "order": 10
+                "order": 9
               },
               {
                 "itemId": "text-1772704083844-10-1644",
@@ -225,7 +216,7 @@
                 "url": "",
                 "caption": "",
                 "level": null,
-                "order": 11
+                "order": 10
               },
               {
                 "itemId": "image-1772704083844-11-6590",
@@ -234,7 +225,7 @@
                 "url": "https://codahosted.io/docs/XyXhw4H4wX/blobs/bl-ywLq8pFa9s/0e9e47eb389bd889760fb9e7c825700aec0af4a1cf2a072c2208fb688aedbe049a99d944090cad80e7486e1d40b20fdddddf03407525ed2d477fb1fc15c0026ce245b6789fdc9fb363356cef395d21c823efff2f693b20f55623080cb16b83d0797e9954",
                 "caption": "Screenshot (66).png",
                 "level": null,
-                "order": 12
+                "order": 11
               },
               {
                 "itemId": "text-1772704083844-12-7071",
@@ -243,7 +234,7 @@
                 "url": "",
                 "caption": "",
                 "level": null,
-                "order": 13
+                "order": 12
               },
               {
                 "itemId": "image-1772704083844-13-1623",
@@ -252,7 +243,7 @@
                 "url": "https://codahosted.io/docs/XyXhw4H4wX/blobs/bl-YZE_tIqVkn/689b1c8e98137e7bc127cee7ccb2da3417c8750f6aa84494b38250a33f57fd7886716e65aeebffad9e702dcc39c1330346e769cf72f84ba8394c8ea27584f426d9071558086c2aa5fb038cbe97b784352a21ba1efd840b2dd0e5919eb5125b834419a6af",
                 "caption": "Screenshot (67).png",
                 "level": null,
-                "order": 14
+                "order": 13
               },
               {
                 "itemId": "text-1772704083844-14-5656",
@@ -261,7 +252,7 @@
                 "url": "",
                 "caption": "",
                 "level": null,
-                "order": 15
+                "order": 14
               },
               {
                 "itemId": "image-1772704083844-15-563",
@@ -270,16 +261,16 @@
                 "url": "https://codahosted.io/docs/XyXhw4H4wX/blobs/bl-dkoFiFJ2KX/525595cb0590719cad6696edd07d2edd43329a6ce9ce5d15cb0e147b13124aff6255dad16c393809e0ed827c6fee4a9f17801c5e8df37389e149f64c5acf9ff1dd2bbcc8016fe038342079167634986149a5b9730d9d94a21fdb6811dfcf4ff7bd1e0e09",
                 "caption": "Screenshot (68).png",
                 "level": null,
-                "order": 16
+                "order": 15
               },
               {
                 "itemId": "text-1772704083844-16-3565",
                 "type": "text",
-                "content": "<div style=\"margin-top: 0.5em; margin-bottom: 0.5em;\"><br></div><div style=\"margin-top: 0.5em; margin-bottom: 0.5em;\"><span style=\"font-weight: bold;\">Edit Device Profile - </span></div><ul style=\"margin-block-start: 1em;\"><li style=\"list-style-type: disc; margin-top: 0.5em; margin-bottom: 0.5em;\">Clicking the device profile row to open its details, then click the \"pencil\" icon in the upper right corner of the dialog.</li></ul>",
+                "content": "<div><br></div><div><span>Edit Device Profile - </span></div><ul><li>Clicking the device profile row to open its details, then click the \"pencil\" icon in the upper right corner of the dialog.</li></ul>",
                 "url": "",
                 "caption": "",
                 "level": null,
-                "order": 17
+                "order": 16
               },
               {
                 "itemId": "image-1772704083844-17-2037",
@@ -288,7 +279,7 @@
                 "url": "https://codahosted.io/docs/XyXhw4H4wX/blobs/bl-_TGCyh_gXp/8fe32ad46c8a4ea3fdb4e4686d213ede50930b3ba79de0d09881faf5f10ecad5f341288329b371761d465370eeccae0351f0f83889033fc54b9105d89614d0deb4fa0ba4a84b72a54f98b2f902b2ad452ce7b5df86a5fd216b4b684d20664cf5765daf56",
                 "caption": "Screenshot (61).png",
                 "level": null,
-                "order": 18
+                "order": 17
               },
               {
                 "itemId": "text-1772704083844-18-9390",
@@ -297,7 +288,7 @@
                 "url": "",
                 "caption": "",
                 "level": null,
-                "order": 19
+                "order": 18
               },
               {
                 "itemId": "image-1772704083844-19-9157",
@@ -306,16 +297,16 @@
                 "url": "https://codahosted.io/docs/XyXhw4H4wX/blobs/bl-ENy0KTje1B/56e9b18cfd7cd32bbea2af28b253d3ee0806f2432521fe1788e094a7f64cb2c6e855c45292d1dbb44225fe73baf3289172c4d7dd02ade2e6c84464ea08a9a36a4cf1e238adece0d7029424bd5a8dba24b947ac937fff83045496d8511fa968e05a58f566",
                 "caption": "Screenshot (62).png",
                 "level": null,
-                "order": 20
+                "order": 19
               },
               {
                 "itemId": "text-1772704083844-20-1329",
                 "type": "text",
-                "content": "<div style=\"margin-top: 0.5em; margin-bottom: 0.5em;\"><span style=\"font-weight: bold;\">Delete Device Profile -</span></div><ul style=\"margin-block-start: 1em;\"><li style=\"list-style-type: disc; margin-top: 0.5em; margin-bottom: 0.5em;\">Click on the “trash can” icon can opposite the device profile name you want to delete.</li></ul>",
+                "content": "<div><span>Delete Device Profile -</span></div><ul><li>Click on the “trash can” icon can opposite the device profile name you want to delete.</li></ul>",
                 "url": "",
                 "caption": "",
                 "level": null,
-                "order": 21
+                "order": 20
               },
               {
                 "itemId": "image-1772704083844-21-4085",
@@ -324,7 +315,7 @@
                 "url": "https://codahosted.io/docs/XyXhw4H4wX/blobs/bl-M5l1vD7RYU/b76c2e93f8aa82580030220f4b6ac6e4166a1f20b55c498d6777c7943a72f29376f0899b071420a3f65e61c51f4feb7359fb6c4dae540aec8762f3798350269c2ebbbc3a181d3a390da084c1e043f0731562706fae49f4fd842551d13872972b3cd588be",
                 "caption": "Screenshot (63).png",
                 "level": null,
-                "order": 22
+                "order": 21
               }
             ]
           }
@@ -1433,7 +1424,7 @@
               {
                 "itemId": "text-1772704426974-12-8643",
                 "type": "text",
-                "content": "<ul style=\"margin-block-start: 1em;\"><li style=\"list-style-type: disc; margin-top: 0.5em; margin-bottom: 0.5em;\">Confirm deleting the asset in the dialog box.</li></ul>",
+                "content": "<ul><li>Confirm deleting the asset in the dialog box.</li></ul>",
                 "url": "",
                 "caption": "",
                 "level": null,

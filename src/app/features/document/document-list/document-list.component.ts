@@ -25,6 +25,9 @@ export class DocumentListComponent implements OnInit {
   renamingFolderName = '';
   showNewFolderInput = false;
   newFolderName = '';
+  searchEnabled = false;
+
+  private readonly searchableFilters = new Set(['recent', 'favorites', 'owned']);
 
   constructor(
     private documentService: DocumentService,
@@ -54,6 +57,7 @@ export class DocumentListComponent implements OnInit {
 
   setFilter(filter: string): void {
     this.activeFilter = filter;
+    this.searchEnabled = this.searchableFilters.has(this.activeFilter);
     if (filter !== 'projects') {
       this.selectedProjectId = null;
     }
@@ -62,6 +66,7 @@ export class DocumentListComponent implements OnInit {
 
   selectProject(projectId: string | null): void {
     this.activeFilter = 'projects';
+    this.searchEnabled = this.searchableFilters.has(this.activeFilter);
     this.selectedProjectId = projectId;
     this.applyFilter();
   }
@@ -77,7 +82,7 @@ export class DocumentListComponent implements OnInit {
         let filtered = docs;
 
         // Apply search
-        if (this.searchQuery.trim()) {
+        if (this.searchEnabled && this.searchQuery.trim()) {
           filtered = filtered.filter(doc =>
             doc.title.toLowerCase().includes(this.searchQuery.toLowerCase())
           );
@@ -113,6 +118,9 @@ export class DocumentListComponent implements OnInit {
   }
 
   onSearch(): void {
+    if (!this.searchEnabled) {
+      return;
+    }
     this.applyFilter();
   }
 
@@ -120,7 +128,6 @@ export class DocumentListComponent implements OnInit {
     this.searchQuery = '';
     this.applyFilter();
   }
-  
 
   // ===== DOCUMENT ACTIONS =====
 

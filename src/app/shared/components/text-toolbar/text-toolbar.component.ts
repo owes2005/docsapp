@@ -54,9 +54,8 @@ export class TextToolbarComponent implements OnInit, OnDestroy {
       return;
     }
 
-    const rect = range.getBoundingClientRect();
-    
-    if (rect.width === 0 && rect.height === 0) {
+    const rect = this.getToolbarAnchorRect(editableParent, range);
+    if (!rect || (rect.width === 0 && rect.height === 0)) {
       this.visible = false;
       return;
     }
@@ -65,9 +64,9 @@ export class TextToolbarComponent implements OnInit, OnDestroy {
     this.activeEditable = editableParent;
 
     // Toolbar dimensions
-    const toolbarWidth = 420;
+    const toolbarWidth = this.getToolbarWidth();
     const toolbarHeight = 50;
-    const gap = 12;
+    const gap = 6;
     const viewportPadding = 10;
 
     // Calculate horizontal position (centered on selection)
@@ -117,6 +116,51 @@ export class TextToolbarComponent implements OnInit, OnDestroy {
     this.position = { top, left };
     this.showBelow = positionBelow;
     this.visible = true;
+  }
+
+  private getToolbarAnchorRect(editableParent: HTMLElement, range: Range): DOMRect | null {
+    const contentBlock = editableParent.closest('.content-block') as HTMLElement | null;
+    if (contentBlock) {
+      const blockRect = contentBlock.getBoundingClientRect();
+      if (blockRect.width > 0 && blockRect.height > 0) {
+        return blockRect;
+      }
+    }
+
+    const editableRect = editableParent.getBoundingClientRect();
+    if (editableRect.width > 0 && editableRect.height > 0) {
+      return editableRect;
+    }
+
+    return this.getSelectionAnchorRect(range);
+  }
+
+  private getSelectionAnchorRect(range: Range): DOMRect | null {
+    const rects = Array.from(range.getClientRects()).filter(r => r.width > 0 && r.height > 0);
+    if (rects.length === 0) {
+      const fallback = range.getBoundingClientRect();
+      return fallback.width > 0 || fallback.height > 0 ? fallback : null;
+    }
+
+    // Use the widest fragment on the first visual line.
+    // This avoids list-marker/tiny fragments pulling the toolbar to the left.
+    const top = Math.min(...rects.map(r => r.top));
+    const topLineRects = rects.filter(r => Math.abs(r.top - top) < 1.5);
+    const anchor = topLineRects.reduce((best, current) =>
+      current.width > best.width ? current : best
+    );
+
+    return new DOMRect(anchor.left, anchor.top, anchor.width, anchor.height);
+  }
+
+  private getToolbarWidth(): number {
+    const toolbarContent = document.querySelector('.text-toolbar .toolbar-content') as HTMLElement | null;
+    if (toolbarContent) {
+      return toolbarContent.getBoundingClientRect().width;
+    }
+
+    // Fallback for first render before toolbar is in DOM.
+    return 180;
   }
 
   findEditableParent(node: Node): HTMLElement | null {
