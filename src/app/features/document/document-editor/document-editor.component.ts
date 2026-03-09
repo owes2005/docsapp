@@ -19,7 +19,7 @@ export class DocumentEditorComponent implements OnInit, OnDestroy {
   currentDocumentId: string | null = null;
   renamingPageId: string | null = null;
   renamingPageTitle = '';
-  sidebarOpen = true; // ADD THIS
+  sidebarOpen = true; 
 
   constructor(
     private route: ActivatedRoute,
