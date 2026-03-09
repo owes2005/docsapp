@@ -11,6 +11,7 @@ import { Document, Folder, Project } from '../models/document.model';
 export class DocumentService {
   private apiUrl = 'http://localhost:3000';
 
+  // Local in-memory cache streams consumed by components.
   private documentsSubject = new BehaviorSubject<Document[]>([]);
   private foldersSubject = new BehaviorSubject<Folder[]>([]);
   private projectsSubject = new BehaviorSubject<Project[]>([]);
@@ -25,6 +26,7 @@ export class DocumentService {
 
   getProjects(): Observable<Project[]> {
     return this.http.get<Project[]>(`${this.apiUrl}/projects`).pipe(
+      // Keep cache and API response aligned for reactive subscribers.
       tap(projects => this.projectsSubject.next(projects)),
       catchError(this.handleError)
     );
@@ -46,6 +48,7 @@ export class DocumentService {
   }
 
   createFolder(name: string, projectId: string): Observable<Folder> {
+    // Build client-side defaults expected by current JSON-server payload.
     const newFolder: Partial<Folder> = {
       id: 'folder' + Date.now(),
       projectId: projectId,
@@ -63,6 +66,7 @@ export class DocumentService {
     return this.http
       .get<Document[]>(`${this.apiUrl}/documents?folderId=${id}`)
       .pipe(
+        // Guard against orphaned documents before folder deletion.
         switchMap((docs) => {
           if (docs.length > 0) {
             return throwError(
@@ -113,6 +117,7 @@ export class DocumentService {
   }
 
   createDocument(document: Partial<Document>): Observable<Document> {
+    // Apply defaults so new records are render-safe in all list views.
     const newDoc = {
       ...document,
       isFavorite: false,
@@ -185,6 +190,7 @@ export class DocumentService {
       return throwError(() => error);
     }
 
+    // Normalize varying backend error shapes into one user-facing message.
     const serverMessage =
       (typeof error?.error === 'string' && error.error) ||
       error?.error?.message ||

@@ -9,8 +9,10 @@ import { Page, ContentBlock, BlockType } from '../models/page.model';
 })
 export class PageService {
   private apiUrl = 'http://localhost:3000';
+  // Shared page state for components that subscribe to page collections.
   private pagesSubject = new BehaviorSubject<Page[]>([]);
   public pages$ = this.pagesSubject.asObservable();
+  // Tracks current page selection across editor/tooling components.
   private activePageIdSubject = new BehaviorSubject<string | null>(null);
   public activePageId$ = this.activePageIdSubject.asObservable();
   private idCounter = 0;
@@ -43,6 +45,7 @@ export class PageService {
   }
 
   createPage(page: Partial<Page>): Observable<Page> {
+    // Accept either flat editor blocks or grouped storage blocks, then normalize.
     const incomingBlocks = this.normalizeBlocksToFlat(page.content?.blocks || []);
     const blocks: ContentBlock[] = incomingBlocks.length > 0
       ? incomingBlocks.map((block, index) => ({
@@ -65,6 +68,7 @@ export class PageService {
       ...page,
       content: {
         id: page.content?.id || 'content-' + Date.now(),
+        // Persist nested/grouped structure expected by storage.
         blocks: this.serializeBlocksForStorage(blocks)
       }
     };
@@ -82,6 +86,7 @@ export class PageService {
   updatePage(id: string, page: Partial<Page>): Observable<Page> {
     const payload: Partial<Page> = { ...page };
     if (payload.content?.blocks) {
+      // Ensure payload is always written using storage schema.
       const normalized = this.normalizeBlocksToFlat(payload.content.blocks);
       payload.content = {
         ...payload.content,
@@ -190,6 +195,7 @@ export class PageService {
   }
 
   private normalizePageFromStorage(page: any): Page {
+    // Convert persisted grouped content into flat editor-friendly blocks.
     const blocks = this.normalizeBlocksToFlat(page?.content?.blocks || []);
     return {
       ...page,
@@ -205,6 +211,7 @@ export class PageService {
       return [];
     }
 
+    // Support both old flat payloads and new grouped payloads.
     const looksGrouped = rawBlocks.some((block) => Array.isArray(block?.items));
     if (!looksGrouped) {
       return [...rawBlocks]
@@ -268,6 +275,7 @@ export class PageService {
   }
 
   private serializeBlocksForStorage(blocks: ContentBlock[]): any[] {
+    // Group by logical blockId so one visual block can hold mixed typed items.
     const grouped = new Map<string, ContentBlock[]>();
 
     for (const block of [...blocks].sort((a, b) => (a.order ?? 0) - (b.order ?? 0))) {
@@ -317,6 +325,7 @@ export class PageService {
       return [this.toStorageItem(item)];
     }
 
+    // Split mixed HTML (text + inline image) into distinct typed storage items.
     const mixed = this.splitMixedHtmlIntoTypedItems(raw, item.type, item.level);
     if (mixed.length <= 1) {
       return [this.toStorageItem(item)];
@@ -350,6 +359,7 @@ export class PageService {
     level?: number | null;
   }> {
     if (typeof document === 'undefined') {
+      // Non-browser fallback (tests/SSR): preserve raw content.
       return [{ type: textType, content: html, level: headingLevel ?? null }];
     }
 
@@ -433,6 +443,7 @@ export class PageService {
   }
 
   private toStorageItem(item: ContentBlock): any {
+    // Normalized storage record used by grouped payload format.
     const imagePayload = this.readImagePayload(item);
     const base = {
       itemId: item.id,
@@ -455,6 +466,7 @@ export class PageService {
   }
 
   private readImagePayload(block: any): { url: string; caption: string } {
+    // Accept image metadata from legacy and current field shapes.
     const contentObj =
       block?.content &&
       typeof block.content === 'object' &&
@@ -479,6 +491,7 @@ export class PageService {
   }
 
   private resolveBlockType(block: any): BlockType {
+    // Infer type for malformed/legacy records when "type" is absent.
     const rawType = String(block?.type || '').toLowerCase();
     if (
       rawType === 'heading' ||

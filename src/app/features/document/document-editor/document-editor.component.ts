@@ -12,7 +12,7 @@ import { Page } from 'src/app/core/models/page.model';
   styleUrls: ['./document-editor.component.css']
 })
 export class DocumentEditorComponent implements OnInit, OnDestroy {
-
+  // Active document with page list shown in editor layout.
   document: Document | null = null;
   pages: Page[] = [];
   selectedPage: Page | null = null;
@@ -31,6 +31,7 @@ export class DocumentEditorComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.route.params.subscribe(params => {
       const documentId = params['documentId'];
+      // Reset state on route changes to avoid showing stale data.
       this.currentDocumentId = documentId;
       this.document = null;
       this.pages = [];
@@ -47,6 +48,7 @@ export class DocumentEditorComponent implements OnInit, OnDestroy {
 
   loadDocument(documentId: string): void {
     this.documentService.getDocument(documentId).subscribe(doc => {
+      // Ignore late responses if user navigated to another document.
       if (this.currentDocumentId !== documentId) return;
       this.document = doc;
     });
@@ -54,6 +56,7 @@ export class DocumentEditorComponent implements OnInit, OnDestroy {
 
   loadPages(documentId: string): void {
     this.pageService.getPagesByDocument(documentId).subscribe(pages => {
+      // Ignore late responses if user navigated to another document.
       if (this.currentDocumentId !== documentId) return;
       this.pages = pages.sort((a, b) => a.order - b.order);
       if (this.pages.length > 0) {
@@ -65,6 +68,7 @@ export class DocumentEditorComponent implements OnInit, OnDestroy {
   }
 
   selectPage(page: Page): void {
+    // Use a deep copy so block editor mutations stay local until save.
     this.selectedPage = JSON.parse(JSON.stringify(page));
     this.pageService.setActivePageId(page.id);
   }

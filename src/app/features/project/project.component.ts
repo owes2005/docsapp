@@ -59,7 +59,7 @@ export class ProjectComponent implements OnInit {
       const projectId = params['projectId'];
       this.loadProject(projectId);
       this.loadFolders(projectId);
-      this.loadDocuments(projectId); // Changed to filter by project
+      this.loadDocuments(projectId); 
     });
 
     // Scroll to specific folder if folderId in query params
@@ -249,6 +249,7 @@ export class ProjectComponent implements OnInit {
 
     try {
       const projectId = this.project.id;
+      // Fetch folders + documents first, then pages in parallel per document.
       const [folders, allDocuments] = await Promise.all([
         firstValueFrom(this.documentService.getFoldersByProject(projectId)),
         firstValueFrom(this.documentService.getDocuments()),
@@ -296,6 +297,7 @@ export class ProjectComponent implements OnInit {
     folders: Folder[],
     documentsWithPages: Array<Document & { pages: Page[] }>
   ): Promise<void> {
+    // Cache image fetches during a single export to avoid duplicate network work.
     this.pdfImagePromiseCache.clear();
     await this.preloadProjectPdfImages(documentsWithPages);
 
@@ -382,7 +384,6 @@ export class ProjectComponent implements OnInit {
         );
       }
 
-      // Header text removed per export requirements.
 
       setStroke(theme.border);
       pdf.setLineWidth(0.8);
@@ -490,6 +491,7 @@ export class ProjectComponent implements OnInit {
         color?: number[];
       }
     ): void => {
+      // Convert sanitized HTML into styled text runs for jsPDF drawing.
       const runs = this.extractStyledRunsFromHtml(
         html,
         options.baseStyle || 'normal',
@@ -957,6 +959,7 @@ export class ProjectComponent implements OnInit {
   private async preloadProjectPdfImages(
     documentsWithPages: Array<Document & { pages: Page[] }>
   ): Promise<void> {
+    // Warm image cache before rendering to reduce async layout interruptions.
     const urls = new Set<string>();
 
     for (const doc of documentsWithPages) {

@@ -20,6 +20,7 @@ export class ImageViewerComponent {
 
   @HostListener('document:keydown', ['$event'])
   handleKeyboardEvent(event: KeyboardEvent): void {
+    // Keyboard shortcuts: ESC closes, D triggers quick download.
     if (event.key === 'Escape') {
       this.close();
     }
@@ -33,6 +34,7 @@ export class ImageViewerComponent {
   }
 
   downloadImage(): void {
+    // Browser-native download via temporary anchor.
     const link = document.createElement('a');
     link.href = this.data.imageUrl;
     link.download = 'image.jpg';

@@ -37,6 +37,7 @@ import { ImageViewerComponent } from './shared/components/image-viewer/image-vie
 import { ProjectComponent } from './features/project/project.component';
 
 @NgModule({
+  // Root declarations for app shell, features, and shared editor components.
   declarations: [
     AppComponent,
     AppShellComponent,
@@ -56,7 +57,7 @@ import { ProjectComponent } from './features/project/project.component';
     ReactiveFormsModule,
     AppRoutingModule,
 
-    // Material
+    // Angular Material + CDK modules used across docs workspace UI.
     MatToolbarModule,
     MatButtonModule,
     MatIconModule,

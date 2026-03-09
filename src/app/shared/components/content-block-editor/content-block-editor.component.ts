@@ -7,6 +7,7 @@ import { Component, EventEmitter, Input, Output } from '@angular/core';
 })
 export class ContentBlockEditorComponent {
   @Input() content = '';
+  // Emits updated textarea value for parent-managed persistence.
   @Output() contentChange = new EventEmitter<string>();
 
   onContentChange(event: Event): void {

@@ -27,6 +27,7 @@ interface BlockMenuItem {
 export class BlockEditorComponent implements OnInit, OnChanges, OnDestroy {
   @Input() page!: Page;
 
+  // Editor works on a local mutable copy and persists through PageService.
   blocks: ContentBlock[] = [];
   pageTitle = 'Untitled page';
   editingBlockId: string | null = null;
@@ -45,6 +46,7 @@ export class BlockEditorComponent implements OnInit, OnChanges, OnDestroy {
     string,
     { raw: string; safe: SafeHtml }
   >();
+  // Tracks URL fallback attempts for remote images (proxy <-> direct URL).
   private imageLoadRetry = new Map<string, number>();
   private imageOriginalUrl = new Map<string, string>();
   private idCounter = 0;
@@ -149,12 +151,12 @@ export class BlockEditorComponent implements OnInit, OnChanges, OnDestroy {
   }
 
   loadPageData(): void {
-    // Deep clone to ensure independent data
+    // Deep clone so in-progress edits do not mutate @Input() reference.
     const pageCopy = JSON.parse(JSON.stringify(this.page));
     this.pageTitle = pageCopy.title || 'Untitled page';
     this.blocks = pageCopy.content?.blocks || [];
 
-    // Ensure each block has required properties
+    // Normalize legacy/incomplete block payloads before rendering.
     this.blocks.forEach((block, index) => {
       if (!block.id) block.id = this.generateBlockId(block.type);
       if (!block.blockId) block.blockId = `block-${block.id}`;
@@ -177,6 +179,7 @@ export class BlockEditorComponent implements OnInit, OnChanges, OnDestroy {
       return cached.safe;
     }
 
+    // Cache sanitized HTML per block to avoid repeated sanitizer work during CD.
     const clean = this.sanitizer.sanitize(SecurityContext.HTML, raw) || '';
     const safe = this.sanitizer.bypassSecurityTrustHtml(clean);
     this.trustedContentCache.set(block.id, { raw, safe });
@@ -256,6 +259,7 @@ export class BlockEditorComponent implements OnInit, OnChanges, OnDestroy {
 
     event.preventDefault();
 
+    // Keep rich text when available; fallback to escaped plain text.
     const sanitizedHtml = html
       ? this.normalizeEditableHtml(html)
       : this.escapeHtml(text).replace(/\n/g, '<br>');
@@ -352,7 +356,7 @@ export class BlockEditorComponent implements OnInit, OnChanges, OnDestroy {
       .filter((entry) => entry.groupId === groupId)
       .map((entry) => entry.index);
 
-    // Prevent cross-group interleaving from drag and drop.
+    // Prevent cross-group interleaving: grouped block parts must move together.
     if (!groupIndices.includes(event.currentIndex)) {
       return;
     }
@@ -417,7 +421,7 @@ export class BlockEditorComponent implements OnInit, OnChanges, OnDestroy {
     const selection = window.getSelection();
     if (!selection || selection.rangeCount === 0) return;
 
-    // Store the current range
+    // Store caret range so command insertion can remove the typed slash text.
     this.slashRange = selection.getRangeAt(0).cloneRange();
 
     // Get cursor position
@@ -481,6 +485,7 @@ export class BlockEditorComponent implements OnInit, OnChanges, OnDestroy {
     top = rangeRect.bottom + 8;
     left = rangeRect.left;
 
+    // Keep slash menu anchored to caret while clamping to viewport bounds.
     const menuWidth = 320;
     const menuHeight = 400;
 
@@ -597,7 +602,7 @@ export class BlockEditorComponent implements OnInit, OnChanges, OnDestroy {
           ? '<ol><li></li></ol>'
           : '';
 
-    // Remove the slash and any typed filter text
+    // Remove slash command token before inserting/converting a block.
     if (this.slashRange) {
       const selection = window.getSelection();
       if (selection) {
@@ -633,7 +638,7 @@ export class BlockEditorComponent implements OnInit, OnChanges, OnDestroy {
     // Close menu
     this.closeSlashMenu(false);
 
-    // If current block is empty, convert it
+    // Empty current block is converted in-place for natural slash-command UX.
     if (this.activeBlockId) {
       const activeBlock = this.blocks.find((b) => b.id === this.activeBlockId);
       if (activeBlock) {
@@ -662,7 +667,7 @@ export class BlockEditorComponent implements OnInit, OnChanges, OnDestroy {
       }
     }
 
-    // Otherwise create new block below
+    // Non-empty block: insert a new block directly below active one.
     if (this.activeBlockId) {
       const activeBlock = this.blocks.find((b) => b.id === this.activeBlockId);
       if (activeBlock) {
@@ -725,7 +730,7 @@ export class BlockEditorComponent implements OnInit, OnChanges, OnDestroy {
     this.slashRange = null;
   }
 
-  //Image logic
+  // ===== IMAGE LOGIC =====
   uploadImage(event: any, blockId: string): void {
     const file = event.target.files[0];
     if (file) {
@@ -791,6 +796,7 @@ export class BlockEditorComponent implements OnInit, OnChanges, OnDestroy {
 
     const originalUrl = this.imageOriginalUrl.get(blockId);
     const retries = this.imageLoadRetry.get(blockId) || 0;
+    // Retry strategy: proxy -> direct -> proxy, then surface actionable error.
     // Try direct URL if proxy path fails.
     if (retries === 0 && this.isProxyUrl(currentUrl) && originalUrl) {
       this.setImageUrl(block, originalUrl);
@@ -891,6 +897,7 @@ export class BlockEditorComponent implements OnInit, OnChanges, OnDestroy {
     }
 
     if (this.page) {
+      // Persist pending in-editor values first, then mapped block payload.
       const updatedPage: Partial<Page> = {
         title: this.pageTitle,
         content: {
@@ -1138,7 +1145,7 @@ export class BlockEditorComponent implements OnInit, OnChanges, OnDestroy {
     const parse = tryParse(input);
     if (!parse) return null;
 
-    // Bing image result links usually carry the real URL in mediaurl/imgurl.
+    // Bing result pages usually wrap the actual image URL in query params.
     if (/(\.|^)bing\.com$/i.test(parse.hostname)) {
       const fromMedia =
         parse.searchParams.get('mediaurl') ||
@@ -1149,7 +1156,7 @@ export class BlockEditorComponent implements OnInit, OnChanges, OnDestroy {
       }
     }
 
-    // If user pasted an already proxied weserv URL, try to unwrap nested URL.
+    // If user pasted a proxied weserv URL, unwrap nested original URL.
     if (/images\.weserv\.nl$/i.test(parse.hostname)) {
       const nested = parse.searchParams.get('url');
       if (nested) {
@@ -1175,7 +1182,7 @@ export class BlockEditorComponent implements OnInit, OnChanges, OnDestroy {
   private shouldOpenSlashMenu(range: Range): boolean {
     const editable = this.findEditableContainer(range);
     if (!editable) return false;
-    // Open only when slash is typed as the very first character of a block.
+    // Slash menu only opens at block start to avoid conflicts while typing text.
     return this.getCaretOffsetWithin(editable, range) === 0;
   }
 

@@ -7,6 +7,7 @@ import { ProjectComponent } from './features/project/project.component';
 
 const routes: Routes = [
   {
+    // App shell hosts persistent layout; feature pages render as children.
     path: '',
     component: AppShellComponent,
     children: [

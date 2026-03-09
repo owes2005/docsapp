@@ -16,6 +16,7 @@ export class MainSidebarComponent implements OnInit {
   folders: Folder[] = [];
   documents: Document[] = [];
 
+  // UI-only expand/collapse state for nested tree rendering.
   expandedProjects: Set<string> = new Set();
   expandedFolders: Set<string> = new Set();
 
@@ -37,6 +38,7 @@ export class MainSidebarComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
+    // Subscribe to service caches so sidebar stays reactive across app screens.
     this.documentService.projects$.subscribe(p => {
       this.projects = p;
       this.updateActiveState(this.router.url);
@@ -50,12 +52,12 @@ export class MainSidebarComponent implements OnInit {
       this.updateActiveState(this.router.url);
     });
 
-    // Initial data fetch to populate the reactive streams.
+    // Initial data fetch to populate reactive streams.
     this.documentService.getProjects().subscribe();
     this.documentService.getFolders().subscribe();
     this.documentService.getDocuments().subscribe();
 
-    // Track active route
+    // Track route changes to keep active row highlight in sync.
     this.router.events.pipe(
       filter(e => e instanceof NavigationEnd)
     ).subscribe((e: any) => {
@@ -71,7 +73,7 @@ export class MainSidebarComponent implements OnInit {
     const folderMatch = url.match(/folderId=([^&]+)/);
     this.isDocumentsListRoute = /\/documents(\?|$)/.test(url);
 
-    // Reset active markers first so non-project routes show all projects again.
+    // Reset active markers first so non-project routes show full tree.
     this.activeProjectId = null;
     this.activeFolderId = null;
     this.activeDocId = null;
@@ -81,7 +83,7 @@ export class MainSidebarComponent implements OnInit {
       this.expandedProjects.add(this.activeProjectId);
     } else if (docMatch) {
       this.activeDocId = docMatch[1];
-      // Expand parent folder and project
+      // Expand parent folder and project for focused document context.
       const doc = this.documents.find(d => d.id === docMatch[1]);
       if (doc?.projectId) {
         this.activeProjectId = doc.projectId;
@@ -99,7 +101,7 @@ export class MainSidebarComponent implements OnInit {
       }
     }
 
-    // Check for folder query param
+    // Folder query param is used by project page deep-linking.
     if (folderMatch) {
       this.activeFolderId = folderMatch[1];
       this.expandedFolders.add(this.activeFolderId);
@@ -151,6 +153,7 @@ export class MainSidebarComponent implements OnInit {
   }
 
   get visibleProjects(): Project[] {
+    // When focused inside a project/doc route, pin sidebar to that project.
     if (!this.activeProjectId) {
       return this.projects;
     }

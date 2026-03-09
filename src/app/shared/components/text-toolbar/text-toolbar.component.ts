@@ -15,6 +15,7 @@ export class TextToolbarComponent implements OnInit, OnDestroy {
   private readonly selectionChangeHandler = this.handleSelectionChange.bind(this);
 
   ngOnInit(): void {
+    // Use global selection events because editing areas are contenteditable divs.
     document.addEventListener('selectionchange', this.selectionChangeHandler);
   }
 
@@ -30,6 +31,7 @@ export class TextToolbarComponent implements OnInit, OnDestroy {
       clearTimeout(this.selectionTimeout);
     }
 
+    // Throttle selection updates while user is dragging/selecting text.
     this.selectionTimeout = setTimeout(() => {
       this.updateToolbarPosition();
     }, 50);
@@ -43,6 +45,7 @@ export class TextToolbarComponent implements OnInit, OnDestroy {
       return;
     }
 
+    // Anchor toolbar to selected editable region, not raw browser selection alone.
     const range = selection.getRangeAt(0);
     const container = range.commonAncestorContainer;
     const editableParent = this.findEditableParent(container);
@@ -206,6 +209,7 @@ export class TextToolbarComponent implements OnInit, OnDestroy {
   }
 
   private preserveSelection(): void {
+    // Re-evaluate position after execCommand mutates DOM selection ranges.
     setTimeout(() => {
       const selection = window.getSelection();
       if (selection && selection.toString().length > 0) {

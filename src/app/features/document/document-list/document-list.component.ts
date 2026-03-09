@@ -11,6 +11,7 @@ import { map } from 'rxjs/operators';
   styleUrls: ['./document-list.component.css']
 })
 export class DocumentListComponent implements OnInit {
+  // Source streams from DocumentService cache.
   documents$: Observable<Document[]>;
   folders$: Observable<Folder[]>;
   projects$: Observable<Project[]>;
@@ -41,6 +42,7 @@ export class DocumentListComponent implements OnInit {
   }
 
  ngOnInit(): void {
+  // Prime service caches used by list and sidebar.
   this.documentService.getDocuments().subscribe();
   this.documentService.getFolders().subscribe();
   this.documentService.getProjects().subscribe();
@@ -79,6 +81,7 @@ export class DocumentListComponent implements OnInit {
   applyFilter(): void {
     this.filteredDocuments$ = this.documents$.pipe(
       map(docs => {
+        // Keep filtering purely derived from source stream + UI state.
         let filtered = docs;
 
         // Apply search
@@ -88,7 +91,7 @@ export class DocumentListComponent implements OnInit {
           );
         }
 
-        // Apply tab filter
+        // Apply active tab semantics.
         switch (this.activeFilter) {
           case 'projects':
             filtered = this.selectedProjectId
@@ -224,7 +227,7 @@ deleteDocument(event: Event, id: string): void {
   }
 
   openFolder(folder: Folder): void {
-    // Navigate to the project page with the folder highlighted
+    // Route with folder query param so project page can auto-scroll/highlight.
     this.router.navigate(['/project', folder.projectId], {
       queryParams: { folderId: folder.id }
     });

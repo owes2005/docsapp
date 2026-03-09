@@ -82,6 +82,7 @@ export class AppShellComponent implements OnInit {
     this.router.events.pipe(
       filter(event => event instanceof NavigationEnd)
     ).subscribe((event: any) => {
+      // Keep shell controls (sidebar/export title) synced with route changes.
       this.currentRoute = event.url;
       this.updateFromRoute();
     });
@@ -191,6 +192,7 @@ export class AppShellComponent implements OnInit {
         rightLogo
       };
 
+      // Cover + header are handled before content loop so page numbering remains clean.
       this.addHeader(context);
       this.renderHeading(context, context.docTitle || 'Untitled', 1);
       this.renderParagraph(
@@ -553,6 +555,7 @@ export class AppShellComponent implements OnInit {
       lineHeight?: number;
     }
   ): void {
+    // Styled-run rendering preserves inline formatting from rich-text blocks.
     const runs = this.extractStyledRunsFromHtml(
       html,
       options?.style ?? 'normal',
@@ -755,6 +758,7 @@ export class AppShellComponent implements OnInit {
   }
 
   private updateFromRoute(): void {
+    // Walk to deepest child route where documentId param is defined.
     let activeRoute = this.route;
     while (activeRoute.firstChild) {
       activeRoute = activeRoute.firstChild;

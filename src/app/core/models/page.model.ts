@@ -3,6 +3,7 @@ export interface Page {
   documentId: string;
   title: string;
   icon?: string;
+  // Sort order in document page list.
   order: number;
   parentId?: string | null;
   content: PageContent;
@@ -15,13 +16,13 @@ export interface PageContent {
 
 export interface ContentBlock {
   id: string;
-  // Logical container id: multiple typed items can belong to one block group.
+  // Logical container id: multiple typed items can belong to one visual block group.
   blockId?: string;
   type: BlockType;
   content?: any;
   order: number;
   level?: number;
-  // Legacy fields kept for backward compatibility with old records.
+  // Legacy image fields preserved for backward compatibility with old payloads.
   imageUrl?: string;
   imageCaption?: string;
   formatting?: TextFormatting;
@@ -32,7 +33,7 @@ export interface ImageBlockContent {
   caption?: string;
 }
 
-// Storage-oriented nested structure.
+// Storage-oriented nested shape used by persisted page payloads.
 export interface ContentBlockGroup {
   blockId: string;
   order: number;
